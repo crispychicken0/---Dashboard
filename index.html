@@ -2,105 +2,194 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>📊 نظام محاسبة المطعم - Dashboard</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    body { font-family: Tahoma, sans-serif; margin:20px; background:#f5f6fa; }
-    h1 { text-align:center; margin-bottom:20px; }
-    .container { background:white; padding:20px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.15); }
-    .summary { margin:20px 0; display:flex; gap:15px; flex-wrap:wrap; }
-    .card { background:#fafafa; padding:15px; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,0.1); flex:1; min-width:160px; text-align:center; }
-    table { width:100%; border-collapse:collapse; margin-top:20px; }
-    th, td { border:1px solid #ccc; padding:8px; text-align:center; }
-    th { background:#eee; }
-    canvas { margin-top:30px; }
-    button { margin:10px 5px 0; padding:10px 18px; border:none; border-radius:8px; cursor:pointer; background:#3498db; color:white; font-size:14px; }
-    button:hover { background:#2980b9; }
-    input[type="file"], input[type="date"] { margin:10px 5px; padding:6px; }
-    .error { color: red; margin: 10px 0; }
+    body { font-family: Tahoma, sans-serif; margin: 20px; background: #f5f6fa; }
+    h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
+    .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 1200px; margin: auto; }
+    .section { margin-bottom: 30px; padding: 15px; background: #fafafa; border-radius: 8px; }
+    .section-title { font-size: 1.2em; color: #34495e; margin-bottom: 15px; }
+    .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 20px 0; }
+    .card { background: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center; transition: transform 0.2s; }
+    .card:hover { transform: translateY(-5px); }
+    .card span { font-size: 1.5em; color: #e74c3c; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+    th { background: #ecf0f1; color: #2c3e50; }
+    canvas { margin: 30px auto; max-width: 100%; }
+    button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; background: #3498db; color: white; font-size: 14px; margin: 5px; }
+    button:hover { background: #2980b9; }
+    input[type="file"], input[type="date"], input[type="text"], input[type="number"] { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 5px; width: 200px; }
+    .error { color: #e74c3c; margin: 10px 0; }
+    .manual-input { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; padding: 15px; background: #f9f9f9; border-radius: 8px; }
+    .tooltip { position: relative; display: inline-block; }
+    .tooltip .tooltiptext { visibility: hidden; width: 120px; background: #2c3e50; color: white; text-align: center; border-radius: 5px; padding: 5px; position: absolute; z-index: 1; bottom: 125%; right: 50%; transform: translateX(50%); }
+    .tooltip:hover .tooltiptext { visibility: visible; }
+    @media (max-width: 600px) {
+      input[type="file"], input[type="date"], input[type="text"], input[type="number"] { width: 100%; }
+      .manual-input { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
   <h1>📊 نظام محاسبة المطعم - Dashboard</h1>
   <div class="container">
-    <label for="ordersFile">ملف الأوامر (Orders):</label>
-    <input type="file" id="ordersFile" accept=".xlsx,.xls,.csv">
-    
-    <label for="payoutsFile">ملف الدفعات (Payouts):</label>
-    <input type="file" id="payoutsFile" accept=".xlsx,.xls,.csv">
-    
-    <label for="refundsFile">ملف التعويضات (Refunds/Adjustments):</label>
-    <input type="file" id="refundsFile" accept=".xlsx,.xls,.csv">
-    
-    <div id="errorMessage" class="error"></div>
+    <div class="section">
+      <div class="section-title">📁 تحميل الملفات</div>
+      <div class="tooltip">
+        <label for="ordersFile">ملف الأوامر (Orders):</label>
+        <span class="tooltiptext">قم بتحميل ملف Excel أو CSV يحتوي على بيانات الأوامر</span>
+      </div>
+      <input type="file" id="ordersFile" accept=".xlsx,.xls,.csv">
+      
+      <div class="tooltip">
+        <label for="payoutsFile">ملف الدفعات (Payouts):</label>
+        <span class="tooltiptext">قم بتحميل ملف Excel أو CSV يحتوي على بيانات الدفعات</span>
+      </div>
+      <input type="file" id="payoutsFile" accept=".xlsx,.xls,.csv">
+      
+      <div class="tooltip">
+        <label for="refundsFile">ملف التعويضات (Refunds/Adjustments):</label>
+        <span class="tooltiptext">قم بتحميل ملف Excel أو CSV يحتوي على بيانات التعويضات</span>
+      </div>
+      <input type="file" id="refundsFile" accept=".xlsx,.xls,.csv">
+      
+      <div id="errorMessage" class="error"></div>
+    </div>
 
-    <div>
-      🔎 فلترة حسب الفترة: 
-      <input type="date" id="startDate"> إلى <input type="date" id="endDate"> 
+    <div class="section manual-input">
+      <div class="section-title">📝 إدخال يدوي للمطاعم</div>
+      <div class="tooltip">
+        <label for="merchantId">MERCHANT_ID:</label>
+        <span class="tooltiptext">أدخل معرف المطعم (مثل 1050334)</span>
+        <input type="text" id="merchantId" placeholder="أدخل MERCHANT_ID">
+      </div>
+      <div class="tooltip">
+        <label for="merchantName">MERCHANT_NAME:</label>
+        <span class="tooltiptext">أدخل اسم المطعم (مثل Crispy Chicken)</span>
+        <input type="text" id="merchantName" placeholder="أدخل اسم المطعم">
+      </div>
+      <div class="tooltip">
+        <label for="merchantArea">MERCHANT_AREA:</label>
+        <span class="tooltiptext">أدخل المنطقة (مثل Al Danah)</span>
+        <input type="text" id="merchantArea" placeholder="أدخل المنطقة">
+      </div>
+      <div class="tooltip">
+        <label for="orderCountInput">عدد الأوامر:</label>
+        <span class="tooltiptext">أدخل عدد الأوامر لهذا المطعم</span>
+        <input type="number" id="orderCountInput" placeholder="أدخل عدد الأوامر">
+      </div>
+      <div class="tooltip">
+        <label for="revenueInput">الإيرادات (درهم):</label>
+        <span class="tooltiptext">أدخل الإيرادات بالدرهم</span>
+        <input type="number" id="revenueInput" placeholder="أدخل الإيرادات">
+      </div>
+      <button onclick="addManualMerchant()">إضافة/تحديث مطعم</button>
+    </div>
+
+    <div class="section">
+      <div class="section-title">🔎 فلترة حسب الفترة</div>
+      <input type="date" id="startDate" value="2025-09-01">
+      <span>إلى</span>
+      <input type="date" id="endDate" value="2025-09-07">
       <button onclick="applyDateFilter()">تصفية</button>
     </div>
 
-    <div class="summary">
-      <div class="card">عدد الأوامر<br><span id="orderCount">0</span></div>
-      <div class="card">إجمالي المبيعات<br><span id="totalSales">0</span> AED</div>
-      <div class="card">إجمالي الخصومات<br><span id="totalDiscount">0</span> AED</div>
-      <div class="card">إجمالي العمولات<br><span id="totalCommission">0</span> AED</div>
-      <div class="card">إجمالي التعويضات<br><span id="totalRefund">0</span> AED</div>
-      <div class="card">إجمالي الدفعات<br><span id="totalPayouts">0</span> AED</div>
-      <div class="card">💰 صافي الربح<br><span id="netProfit">0</span> AED</div>
-      <div class="card">📈 نسبة صافي الربح<br><span id="netProfitRate">0</span>%</div>
+    <div class="section">
+      <div class="section-title">📈 ملخص الفترة (1-7 سبتمبر 2025)</div>
+      <div class="summary">
+        <div class="card">عدد الأوامر<br><span id="orderCount">0</span></div>
+        <div class="card">إجمالي المبيعات<br><span id="totalSales">0</span> AED</div>
+        <div class="card">إجمالي الخصومات<br><span id="totalDiscount">0</span> AED</div>
+        <div class="card">إجمالي العمولات<br><span id="totalCommission">0</span> AED</div>
+        <div class="card">إجمالي التعويضات<br><span id="totalRefund">0</span> AED</div>
+        <div class="card">إجمالي الدفعات<br><span id="totalPayouts">0</span> AED</div>
+        <div class="card">💰 صافي الربح<br><span id="netProfit">0</span> AED</div>
+        <div class="card">📈 نسبة صافي الربح<br><span id="netProfitRate">0</span>%</div>
+      </div>
     </div>
 
-    <h3>📑 جدول المعاملات</h3>
-    <input type="text" id="orderSearch" placeholder="🔍 بحث..." onkeyup="filterTable('ordersTable', this.value)">
-    <table id="ordersTable">
-      <thead>
-        <tr>
-          <th>REFERENCE_ID</th>
-          <th>TRANSACTION_DATE</th>
-          <th>MERCHANT_NAME</th>
-          <th>FOOD_GROSS_BASKET_AMOUNT</th>
-          <th>PARTNER_FUNDED_PROMO_DISCOUNT</th>
-          <th>BILLING_PLATFORM_FEE</th>
-          <th>TOTAL_PAYOUT_AMOUNT</th>
-          <th>STATUS</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="section">
+      <div class="section-title">📊 جدول إجمالي المطاعم</div>
+      <input type="text" id="merchantsSearch" placeholder="🔍 بحث..." onkeyup="filterTable('merchantsTable', this.value)">
+      <table id="merchantsTable">
+        <thead>
+          <tr>
+            <th>MERCHANT_ID</th>
+            <th>MERCHANT_NAME</th>
+            <th>MERCHANT_AREA</th>
+            <th>عدد الأوامر</th>
+            <th>الإيرادات (درهم)</th>
+            <th>التعويضات (درهم)</th>
+            <th>الدفعات الصافية (درهم)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
 
-    <h3>💵 جدول الدفعات من المنصة</h3>
-    <input type="text" placeholder="🔍 بحث..." onkeyup="filterTable('payoutsTable', this.value)">
-    <table id="payoutsTable">
-      <thead>
-        <tr>
-          <th>PAYOUT_ID</th>
-          <th>PAYOUT_DATE</th>
-          <th>PLATFORM</th>
-          <th>PAYOUT_AMOUNT</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="section">
+      <div class="section-title">📑 جدول المعاملات</div>
+      <input type="text" id="orderSearch" placeholder="🔍 بحث..." onkeyup="filterTable('ordersTable', this.value)">
+      <table id="ordersTable">
+        <thead>
+          <tr>
+            <th>REFERENCE_ID</th>
+            <th>TRANSACTION_DATE</th>
+            <th>MERCHANT_NAME</th>
+            <th>FOOD_GROSS_BASKET_AMOUNT</th>
+            <th>PARTNER_FUNDED_PROMO_DISCOUNT</th>
+            <th>BILLING_PLATFORM_FEE</th>
+            <th>TOTAL_PAYOUT_AMOUNT</th>
+            <th>STATUS</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
 
-    <h3>⚠️ جدول التعويضات / النزاعات</h3>
-    <input type="text" placeholder="🔍 بحث..." onkeyup="filterTable('refundsTable', this.value)">
-    <table id="refundsTable">
-      <thead>
-        <tr>
-          <th>REFERENCE_ID</th>
-          <th>TRANSACTION_DATE</th>
-          <th>DESCRIPTION</th>
-          <th>TOTAL_AMOUNT</th>
-          <th>CATEGORY</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="section">
+      <div class="section-title">💵 جدول الدفعات من المنصة</div>
+      <input type="text" placeholder="🔍 بحث..." onkeyup="filterTable('payoutsTable', this.value)">
+      <table id="payoutsTable">
+        <thead>
+          <tr>
+            <th>Billable ID</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Net Payout Amount</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
 
-    <canvas id="chart" height="140"></canvas>
+    <div class="section">
+      <div class="section-title">⚠️ جدول التعويضات / النزاعات</div>
+      <input type="text" placeholder="🔍 بحث..." onkeyup="filterTable('refundsTable', this.value)">
+      <table id="refundsTable">
+        <thead>
+          <tr>
+            <th>REFERENCE_ID</th>
+            <th>TRANSACTION_DATE</th>
+            <th>DESCRIPTION</th>
+            <th>TOTAL_AMOUNT</th>
+            <th>CATEGORY</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <div class="section-title">📊 مخطط الأداء المالي</div>
+      <canvas id="chart" height="140"></canvas>
+    </div>
 
     <div style="text-align:center;">
       <button onclick="exportExcel()">⬇️ تصدير Excel</button>
@@ -109,9 +198,25 @@
   </div>
 
   <script>
-    let orders = [], payouts = [], refunds = [];
-    let filteredOrders = [], filteredPayouts = [], filteredRefunds = [];
+    let orders = [], payouts = [], refunds = [], merchants = [];
+    let filteredOrders = [], filteredPayouts = [], filteredRefunds = [], filteredMerchants = [];
     let chartInstance = null;
+
+    // Predefined data for period (1-7 Sep 2025)
+    const predefinedMerchants = [
+      { MERCHANT_ID: "1050334", MERCHANT_NAME: "Crispy Chicken", MERCHANT_AREA: "Al Barsha 1", orderCount: 161, revenue: 8050, refunds: -250.60, payouts: 15788.37 },
+      { MERCHANT_ID: "1057118", MERCHANT_NAME: "Crispy Chicken", MERCHANT_AREA: "Al Danah", orderCount: 177, revenue: 8850, refunds: -160.27, payouts: 17291.33 },
+      { MERCHANT_ID: "1057120", MERCHANT_NAME: "Crispy Chicken", MERCHANT_AREA: "Al Markaziyah", orderCount: 134, revenue: 6700, refunds: -195.25, payouts: 13094.65 },
+      { MERCHANT_ID: "1057122", MERCHANT_NAME: "Crispy Chicken", MERCHANT_AREA: "Al Rawdah", orderCount: 101, revenue: 5050, refunds: -100.40, payouts: 9844.31 },
+      { MERCHANT_ID: "1057123", MERCHANT_NAME: "Crispy Chicken", MERCHANT_AREA: "Mohammed Bin Zayed City", orderCount: 126, revenue: 6300, refunds: -1030.22, payouts: 12318.12 },
+      { MERCHANT_ID: "1061662", MERCHANT_NAME: "Crispy Chicken", MERCHANT_AREA: "Al Satwa", orderCount: 130, revenue: 6500, refunds: -143.97, payouts: 12724.81 },
+      { MERCHANT_ID: "1066777", MERCHANT_NAME: "Crispy Chicken", MERCHANT_AREA: "Al Danah", orderCount: 173, revenue: 8650, refunds: -879.46, payouts: 16916.51 },
+      { MERCHANT_ID: "1072566", MERCHANT_NAME: "Crispy Chicken", MERCHANT_AREA: "غير محدد", orderCount: 0, revenue: 0, refunds: 0, payouts: -72.71 }
+    ];
+
+    // Initialize with predefined data
+    merchants = [...predefinedMerchants];
+    filteredMerchants = [...merchants];
 
     document.getElementById('ordersFile').addEventListener('change', (e) => handleFile(e, 'orders'));
     document.getElementById('payoutsFile').addEventListener('change', (e) => handleFile(e, 'payouts'));
@@ -127,20 +232,50 @@
       const reader = new FileReader();
       reader.onload = function(evt) {
         try {
-          const data = new Uint8Array(evt.target.result);
-          const workbook = XLSX.read(data, { type: 'array', dateNF: 'yyyy-mm-dd' });
-          let sheetData = workbook.SheetNames[0] ? XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ''}) : [];
-          if (type === 'orders') {
-            orders = sheetData;
-            filteredOrders = [...orders];
-          } else if (type === 'payouts') {
-            payouts = sheetData;
-            filteredPayouts = [...payouts];
-          } else if (type === 'refunds') {
-            refunds = sheetData;
-            filteredRefunds = [...refunds];
+          if (file.name.endsWith('.csv')) {
+            Papa.parse(evt.target.result, {
+              header: true,
+              skipEmptyLines: true,
+              complete: function(results) {
+                let sheetData = results.data.map(row => ({
+                  ...row,
+                  'Start Date': row['Start Date'] ? new Date(row['Start Date']).toISOString().split('T')[0] : '',
+                  'End Date': row['End Date'] ? new Date(row['End Date']).toISOString().split('T')[0] : ''
+                }));
+                if (type === 'orders') {
+                  orders = sheetData;
+                  filteredOrders = [...orders];
+                } else if (type === 'payouts') {
+                  payouts = sheetData;
+                  filteredPayouts = [...payouts];
+                } else if (type === 'refunds') {
+                  refunds = sheetData;
+                  filteredRefunds = [...refunds];
+                }
+                updateMerchants();
+                renderAll();
+              },
+              error: function(err) {
+                document.getElementById('errorMessage').textContent = `خطأ في قراءة ملف ${type}: ` + err.message;
+              }
+            });
+          } else {
+            const data = new Uint8Array(evt.target.result);
+            const workbook = XLSX.read(data, { type: 'array', dateNF: 'yyyy-mm-dd' });
+            let sheetData = workbook.SheetNames[0] ? XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: '' }) : [];
+            if (type === 'orders') {
+              orders = sheetData;
+              filteredOrders = [...orders];
+            } else if (type === 'payouts') {
+              payouts = sheetData;
+              filteredPayouts = [...payouts];
+            } else if (type === 'refunds') {
+              refunds = sheetData;
+              filteredRefunds = [...refunds];
+            }
+            updateMerchants();
+            renderAll();
           }
-          renderAll();
         } catch (err) {
           document.getElementById('errorMessage').textContent = `خطأ في قراءة ملف ${type}: ` + err.message;
         }
@@ -151,10 +286,125 @@
       reader.readAsArrayBuffer(file);
     }
 
+    function addManualMerchant() {
+      const merchantId = document.getElementById('merchantId').value;
+      const merchantName = document.getElementById('merchantName').value;
+      const merchantArea = document.getElementById('merchantArea').value;
+      const orderCount = Number(document.getElementById('orderCountInput').value) || 0;
+      const revenue = Number(document.getElementById('revenueInput').value) || 0;
+
+      if (!merchantId || !merchantName) {
+        document.getElementById('errorMessage').textContent = 'يرجى إدخال MERCHANT_ID و MERCHANT_NAME.';
+        return;
+      }
+
+      const existingIndex = merchants.findIndex(m => m.MERCHANT_ID === merchantId);
+      if (existingIndex >= 0) {
+        merchants[existingIndex] = {
+          ...merchants[existingIndex],
+          MERCHANT_NAME: merchantName,
+          MERCHANT_AREA: merchantArea,
+          orderCount: orderCount,
+          revenue: revenue
+        };
+      } else {
+        merchants.push({
+          MERCHANT_ID: merchantId,
+          MERCHANT_NAME: merchantName,
+          MERCHANT_AREA: merchantArea,
+          orderCount: orderCount,
+          revenue: revenue,
+          refunds: 0,
+          payouts: 0
+        });
+      }
+
+      filteredMerchants = [...merchants];
+      renderMerchants();
+      calculateSummary();
+      renderChart();
+      document.getElementById('merchantId').value = '';
+      document.getElementById('merchantName').value = '';
+      document.getElementById('merchantArea').value = '';
+      document.getElementById('orderCountInput').value = '';
+      document.getElementById('revenueInput').value = '';
+      document.getElementById('errorMessage').textContent = '';
+    }
+
+    function updateMerchants() {
+      const merchantMap = new Map();
+
+      // Initialize with predefined data
+      predefinedMerchants.forEach(m => {
+        merchantMap.set(m.MERCHANT_ID, { ...m });
+      });
+
+      // Update with orders data (if available)
+      orders.forEach(row => {
+        if (row.MERCHANT_ID) {
+          if (!merchantMap.has(row.MERCHANT_ID)) {
+            merchantMap.set(row.MERCHANT_ID, {
+              MERCHANT_ID: row.MERCHANT_ID,
+              MERCHANT_NAME: row.MERCHANT_NAME || 'غير معروف',
+              MERCHANT_AREA: row.MERCHANT_AREA || 'غير محدد',
+              orderCount: 0,
+              revenue: 0,
+              refunds: 0,
+              payouts: 0
+            });
+          }
+          merchantMap.get(row.MERCHANT_ID).orderCount += 1;
+          merchantMap.get(row.MERCHANT_ID).revenue += Number(row.FOOD_GROSS_BASKET_AMOUNT) || 0;
+        }
+      });
+
+      // Update with refunds data
+      refunds.forEach(row => {
+        if (row.MERCHANT_ID) {
+          if (!merchantMap.has(row.MERCHANT_ID)) {
+            merchantMap.set(row.MERCHANT_ID, {
+              MERCHANT_ID: row.MERCHANT_ID,
+              MERCHANT_NAME: row.MERCHANT_NAME || 'غير معروف',
+              MERCHANT_AREA: row.MERCHANT_AREA || 'غير محدد',
+              orderCount: 0,
+              revenue: 0,
+              refunds: 0,
+              payouts: 0
+            });
+          }
+          merchantMap.get(row.MERCHANT_ID).refunds += Number(row.TOTAL_AMOUNT) || 0;
+        }
+      });
+
+      // Update with payouts data
+      payouts.forEach(row => {
+        const merchantId = row['Billable ID'];
+        if (merchantId) {
+          if (!merchantMap.has(merchantId)) {
+            merchantMap.set(merchantId, {
+              MERCHANT_ID: merchantId,
+              MERCHANT_NAME: 'غير معروف',
+              MERCHANT_AREA: 'غير محدد',
+              orderCount: 0,
+              revenue: 0,
+              refunds: 0,
+              payouts: 0
+            });
+          }
+          merchantMap.get(merchantId).payouts += Number(row['Net Payout Amount']) || 0;
+        }
+      });
+
+      merchants = Array.from(merchantMap.values());
+      filteredMerchants = [...merchants];
+      renderMerchants();
+    }
+
     function renderAll(){
       renderTable();
       renderPayouts();
       renderRefunds();
+      renderMerchants();
       calculateSummary();
       renderChart();
     }
@@ -167,12 +417,18 @@
         return (!start || d >= new Date(start)) && (!end || d <= new Date(end));
       });
       filteredPayouts = payouts.filter(row => {
-        const d = new Date(row.PAYOUT_DATE);
+        const d = new Date(row['Start Date']);
         return (!start || d >= new Date(start)) && (!end || d <= new Date(end));
       });
       filteredRefunds = refunds.filter(row => {
         const d = new Date(row.TRANSACTION_DATE);
         return (!start || d >= new Date(start)) && (!end || d <= new Date(end));
+      });
+      filteredMerchants = merchants.filter(m => {
+        const hasOrders = filteredOrders.some(o => o.MERCHANT_ID === m.MERCHANT_ID);
+        const hasPayouts = filteredPayouts.some(p => p['Billable ID'] === m.MERCHANT_ID);
+        const hasRefunds = filteredRefunds.some(r => r.MERCHANT_ID === m.MERCHANT_ID);
+        return hasOrders || hasPayouts || hasRefunds || (m.orderCount > 0 || m.revenue > 0 || m.refunds !== 0 || m.payouts !== 0);
       });
       renderAll();
     }
@@ -208,10 +464,10 @@
       filteredPayouts.forEach(row => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${row.PAYOUT_ID || ''}</td>
-          <td>${row.PAYOUT_DATE || ''}</td>
-          <td>${row.PLATFORM || ''}</td>
-          <td>${Number(row.PAYOUT_AMOUNT || 0).toFixed(2)}</td>`;
+          <td>${row['Billable ID'] || ''}</td>
+          <td>${row['Start Date'] || ''}</td>
+          <td>${row['End Date'] || ''}</td>
+          <td>${Number(row['Net Payout Amount'] || 0).toFixed(2)}</td>`;
         tbody.appendChild(tr);
       });
     }
@@ -231,8 +487,25 @@
       });
     }
 
+    function renderMerchants(){
+      const tbody = document.querySelector('#merchantsTable tbody');
+      tbody.innerHTML = '';
+      filteredMerchants.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${row.MERCHANT_ID || ''}</td>
+          <td>${row.MERCHANT_NAME || ''}</td>
+          <td>${row.MERCHANT_AREA || ''}</td>
+          <td>${row.orderCount || 0}</td>
+          <td>${Number(row.revenue || 0).toFixed(2)}</td>
+          <td>${Number(row.refunds || 0).toFixed(2)}</td>
+          <td>${Number(row.payouts || 0).toFixed(2)}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
     function calculateSummary(){
-      let totalSales = 0, totalDiscount = 0, totalCommission = 0, totalRefund = 0, totalPayouts = 0;
+      let totalSales = 0, totalDiscount = 0, totalCommission = 0, totalRefund = 0, totalPayouts = 0, totalOrders = 0;
 
       filteredOrders.forEach(row => {
         totalSales += Number(row.FOOD_GROSS_BASKET_AMOUNT) || 0;
@@ -241,15 +514,24 @@
                            Math.abs(Number(row.BILLING_PLATFORM_FEE_TAX) || 0) + 
                            Math.abs(Number(row.BILLING_PAYMENT_GATEWAY_FEE) || 0) + 
                            Math.abs(Number(row.BILLING_PAYMENT_GATEWAY_FEE_TAX) || 0);
+        totalOrders += 1;
       });
 
-      filteredPayouts.forEach(row => totalPayouts += Number(row.PAYOUT_AMOUNT) || 0);
+      filteredPayouts.forEach(row => totalPayouts += Number(row['Net Payout Amount']) || 0);
       filteredRefunds.forEach(row => totalRefund += Math.abs(Number(row.TOTAL_AMOUNT) || 0));
+
+      // Use predefined data if no orders file is uploaded
+      if (filteredOrders.length === 0) {
+        totalOrders = filteredMerchants.reduce((sum, m) => sum + (m.orderCount || 0), 0);
+        totalSales = filteredMerchants.reduce((sum, m) => sum + (m.revenue || 0), 0);
+        totalDiscount = totalSales * 0.1; // Assume 10% discounts
+        totalCommission = totalSales * 0.15; // Assume 15% commissions
+      }
 
       const netProfit = totalSales - totalDiscount - totalCommission - totalRefund;
       const netProfitRate = totalSales ? ((netProfit / totalSales) * 100).toFixed(2) : 0;
 
-      document.getElementById('orderCount').textContent = filteredOrders.length;
+      document.getElementById('orderCount').textContent = totalOrders;
       document.getElementById('totalSales').textContent = totalSales.toFixed(2);
       document.getElementById('totalDiscount').textContent = totalDiscount.toFixed(2);
       document.getElementById('totalCommission').textContent = totalCommission.toFixed(2);
@@ -278,16 +560,14 @@
               parseFloat(document.getElementById('totalPayouts').textContent) || 0,
               parseFloat(document.getElementById('netProfit').textContent) || 0
             ],
-            backgroundColor: ['#27ae60','#e67e22','#c0392b','#8e44ad','#16a085','#2980b9']
+            backgroundColor: ['#27ae60', '#e67e22', '#c0392b', '#8e44ad', '#16a085', '#2980b9']
           }]
         },
         options: {
           responsive: true,
           plugins: { legend: { display: false } },
           scales: {
-            y: {
-              beginAtZero: true
-            }
+            y: { beginAtZero: true }
           }
         }
       });
@@ -298,9 +578,11 @@
       const ws1 = XLSX.utils.json_to_sheet(filteredOrders);
       const ws2 = XLSX.utils.json_to_sheet(filteredPayouts);
       const ws3 = XLSX.utils.json_to_sheet(filteredRefunds);
+      const ws4 = XLSX.utils.json_to_sheet(filteredMerchants);
       XLSX.utils.book_append_sheet(wb, ws1, 'Orders');
       XLSX.utils.book_append_sheet(wb, ws2, 'Payouts');
       XLSX.utils.book_append_sheet(wb, ws3, 'Refunds');
+      XLSX.utils.book_append_sheet(wb, ws4, 'Merchants');
       XLSX.writeFile(wb, 'restaurant_report.xlsx');
     }
 
@@ -308,7 +590,7 @@
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
       doc.setFontSize(14);
-      doc.text("تقرير محاسبة المطعم", 10, 15);
+      doc.text("تقرير محاسبة المطعم (1-7 سبتمبر 2025)", 10, 15);
       doc.text("عدد الأوامر: " + document.getElementById('orderCount').textContent, 10, 30);
       doc.text("إجمالي المبيعات: " + document.getElementById('totalSales').textContent + " AED", 10, 40);
       doc.text("إجمالي الخصومات: " + document.getElementById('totalDiscount').textContent + " AED", 10, 50);
@@ -319,6 +601,9 @@
       doc.text("📈 نسبة صافي الربح: " + document.getElementById('netProfitRate').textContent + "%", 10, 100);
       doc.save('restaurant_report.pdf');
     }
+
+    // Initialize with predefined data
+    renderAll();
   </script>
 </body>
 </html>
