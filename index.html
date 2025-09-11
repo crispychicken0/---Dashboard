@@ -8,508 +8,31 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    :root {
-      --primary-color: #3498db;
-      --secondary-color: #2980b9;
-      --success-color: #27ae60;
-      --danger-color: #e74c3c;
-      --warning-color: #f39c12;
-      --info-color: #16a085;
-      --dark-color: #2c3e50;
-      --light-color: #ecf0f1;
-      --shadow: 0 4px 6px rgba(0,0,0,0.1);
-      --transition: all 0.3s ease;
-    }
-    
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0;
-      padding: 20px;
-      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
-      color: var(--dark-color);
-      line-height: 1.6;
-    }
-    
-    h1 {
-      text-align: center;
-      color: var(--dark-color);
-      margin-bottom: 30px;
-      font-weight: 700;
-      position: relative;
-      padding-bottom: 15px;
-    }
-    
-    h1:after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100px;
-      height: 4px;
-      background: var(--primary-color);
-      border-radius: 2px;
-    }
-    
-    .container {
-      background: white;
-      padding: 25px;
-      border-radius: 15px;
-      box-shadow: var(--shadow);
-      max-width: 1400px;
-      margin: auto;
-      transition: var(--transition);
-    }
-    
-    .container:hover {
-      box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-    }
-    
-    .section {
-      margin-bottom: 30px;
-      padding: 20px;
-      background: #fafafa;
-      border-radius: 12px;
-      border-right: 4px solid var(--primary-color);
-      transition: var(--transition);
-    }
-    
-    .section:hover {
-      transform: translateX(-5px);
-    }
-    
-    .section-title {
-      font-size: 1.3em;
-      color: var(--dark-color);
-      margin-bottom: 20px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .summary {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 20px;
-      margin: 25px 0;
-    }
-    
-    .card {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: var(--shadow);
-      text-align: center;
-      transition: var(--transition);
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .card:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 8px 15px rgba(0,0,0,0.15);
-    }
-    
-    .card:before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 5px;
-      background: var(--primary-color);
-    }
-    
-    .card:nth-child(1):before { background: var(--primary-color); }
-    .card:nth-child(2):before { background: var(--success-color); }
-    .card:nth-child(3):before { background: var(--warning-color); }
-    .card:nth-child(4):before { background: var(--danger-color); }
-    .card:nth-child(5):before { background: var(--info-color); }
-    .card:nth-child(6):before { background: #9b59b6; }
-    .card:nth-child(7):before { background: #1abc9c; }
-    .card:nth-child(8):before { background: #34495e; }
-    
-    .card h3 {
-      font-size: 0.9em;
-      color: #7f8c8d;
-      margin-bottom: 10px;
-      font-weight: 500;
-    }
-    
-    .card span {
-      font-size: 1.8em;
-      font-weight: 700;
-      color: var(--dark-color);
-      display: block;
-    }
-    
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      background: white;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: var(--shadow);
-    }
-    
-    th, td {
-      border: 1px solid #e0e0e0;
-      padding: 12px 15px;
-      text-align: center;
-    }
-    
-    th {
-      background: var(--light-color);
-      color: var(--dark-color);
-      font-weight: 600;
-      text-transform: uppercase;
-      font-size: 0.85em;
-      letter-spacing: 0.5px;
-    }
-    
-    tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
-    
-    tr:hover {
-      background-color: #f1f1f1;
-    }
-    
-    canvas {
-      margin: 30px auto;
-      max-width: 100%;
-      height: auto;
-    }
-    
-    button {
-      padding: 12px 24px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      background: var(--primary-color);
-      color: white;
-      font-size: 14px;
-      font-weight: 600;
-      margin: 8px;
-      transition: var(--transition);
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    button:hover {
-      background: var(--secondary-color);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    
-    input[type="file"], input[type="date"], input[type="text"], input[type="number"] {
-      padding: 12px;
-      margin: 8px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      width: 220px;
-      font-size: 14px;
-      transition: var(--transition);
-    }
-    
-    input[type="file"]:focus, input[type="date"]:focus, input[type="text"]:focus, input[type="number"]:focus {
-      border-color: var(--primary-color);
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-    }
-    
-    .error {
-      color: var(--danger-color);
-      margin: 15px 0;
-      padding: 10px;
-      background: rgba(231, 76, 60, 0.1);
-      border-radius: 8px;
-      border-right: 4px solid var(--danger-color);
-    }
-    
-    .success {
-      color: var(--success-color);
-      margin: 15px 0;
-      padding: 10px;
-      background: rgba(39, 174, 96, 0.1);
-      border-radius: 8px;
-      border-right: 4px solid var(--success-color);
-    }
-    
-    .manual-input {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 15px;
-      padding: 20px;
-      background: #f9f9f9;
-      border-radius: 12px;
-    }
-    
-    .tooltip {
-      position: relative;
-      display: inline-block;
-    }
-    
-    .tooltip .tooltiptext {
-      visibility: hidden;
-      width: 200px;
-      background: var(--dark-color);
-      color: white;
-      text-align: center;
-      border-radius: 6px;
-      padding: 8px;
-      position: absolute;
-      z-index: 1;
-      bottom: 125%;
-      right: 50%;
-      transform: translateX(50%);
-      opacity: 0;
-      transition: opacity 0.3s;
-      font-size: 13px;
-    }
-    
-    .tooltip:hover .tooltiptext {
-      visibility: visible;
-      opacity: 1;
-    }
-    
-    .file-upload {
-      position: relative;
-      display: inline-block;
-      cursor: pointer;
-      margin: 10px 0;
-    }
-    
-    .file-upload input[type=file] {
-      position: absolute;
-      opacity: 0;
-      width: 100%;
-      height: 100%;
-      cursor: pointer;
-    }
-    
-    .file-upload-label {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 20px;
-      background: white;
-      border: 2px dashed var(--primary-color);
-      border-radius: 8px;
-      color: var(--primary-color);
-      font-weight: 600;
-      transition: var(--transition);
-    }
-    
-    .file-upload:hover .file-upload-label {
-      background: rgba(52, 152, 219, 0.1);
-    }
-    
-    .loading {
-      display: none;
-      text-align: center;
-      padding: 20px;
-    }
-    
-    .spinner {
-      border: 4px solid rgba(0, 0, 0, 0.1);
-      border-radius: 50%;
-      border-top: 4px solid var(--primary-color);
-      width: 30px;
-      height: 30px;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 10px;
-    }
-    
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    
-    .charts-container {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 30px;
-      margin: 30px 0;
-    }
-    
-    .chart-wrapper {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: var(--shadow);
-    }
-    
-    .export-options {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 15px;
-      margin: 30px 0;
-    }
-    
-    .export-btn {
-      padding: 12px 20px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 600;
-      transition: var(--transition);
-    }
-    
-    .export-excel {
-      background: #27ae60;
-      color: white;
-    }
-    
-    .export-excel:hover {
-      background: #219653;
-    }
-    
-    .export-pdf {
-      background: #e74c3c;
-      color: white;
-    }
-    
-    .export-pdf:hover {
-      background: #c0392b;
-    }
-    
-    .export-chart {
-      background: #9b59b6;
-      color: white;
-    }
-    
-    .export-chart:hover {
-      background: #8e44ad;
-    }
-    
-    .print-btn {
-      background: #34495e;
-      color: white;
-    }
-    
-    .print-btn:hover {
-      background: #2c3e50;
-    }
-    
-    .tabs {
-      display: flex;
-      margin-bottom: 20px;
-      border-bottom: 2px solid var(--light-color);
-    }
-    
-    .tab {
-      padding: 12px 20px;
-      cursor: pointer;
-      font-weight: 600;
-      color: #7f8c8d;
-      transition: var(--transition);
-      border-bottom: 3px solid transparent;
-    }
-    
-    .tab.active {
-      color: var(--primary-color);
-      border-bottom: 3px solid var(--primary-color);
-    }
-    
-    .tab-content {
-      display: none;
-    }
-    
-    .tab-content.active {
-      display: block;
-    }
-    
-    .notification {
-      position: fixed;
-      bottom: 20px;
-      left: 20px;
-      padding: 15px 20px;
-      border-radius: 8px;
-      color: white;
-      font-weight: 600;
-      box-shadow: var(--shadow);
-      z-index: 1000;
-      transform: translateY(100px);
-      opacity: 0;
-      transition: var(--transition);
-    }
-    
-    .notification.show {
-      transform: translateY(0);
-      opacity: 1;
-    }
-    
-    .notification.success {
-      background: var(--success-color);
-    }
-    
-    .notification.error {
-      background: var(--danger-color);
-    }
-    
-    @media (max-width: 768px) {
-      .charts-container {
-        grid-template-columns: 1fr;
-      }
-      
-      .summary {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      }
-      
-      .manual-input {
-        grid-template-columns: 1fr;
-      }
-      
-      input[type="file"], input[type="date"], input[type="text"], input[type="number"] {
-        width: 100%;
-      }
-      
-      .export-options {
-        flex-direction: column;
-        align-items: center;
-      }
-      
-      .export-btn {
-        width: 100%;
-        max-width: 300px;
-        justify-content: center;
-      }
-    }
-    
-    @media print {
-      body {
-        background: white;
-        padding: 0;
-      }
-      
-      .container {
-        box-shadow: none;
-        padding: 0;
-      }
-      
-      .section {
-        break-inside: avoid;
-        border-right: none;
-        border-bottom: 1px solid #eee;
-      }
-      
-      button, .export-options, input[type="file"] {
-        display: none;
-      }
+    body { font-family: Tahoma, sans-serif; margin: 20px; background: #f5f6fa; }
+    h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
+    .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 1200px; margin: auto; }
+    .section { margin-bottom: 30px; padding: 15px; background: #fafafa; border-radius: 8px; }
+    .section-title { font-size: 1.2em; color: #34495e; margin-bottom: 15px; }
+    .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 20px 0; }
+    .card { background: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center; transition: transform 0.2s; }
+    .card:hover { transform: translateY(-5px); }
+    .card span { font-size: 1.5em; color: #e74c3c; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+    th { background: #ecf0f1; color: #2c3e50; }
+    canvas { margin: 30px auto; max-width: 100%; }
+    button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; background: #3498db; color: white; font-size: 14px; margin: 5px; }
+    button:hover { background: #2980b9; }
+    input[type="file"], input[type="date"], input[type="text"], input[type="number"] { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 5px; width: 200px; }
+    .error { color: #e74c3c; margin: 10px 0; }
+    .manual-input { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; padding: 15px; background: #f9f9f9; border-radius: 8px; }
+    .tooltip { position: relative; display: inline-block; }
+    .tooltip .tooltiptext { visibility: hidden; width: 120px; background: #2c3e50; color: white; text-align: center; border-radius: 5px; padding: 5px; position: absolute; z-index: 1; bottom: 125%; right: 50%; transform: translateX(50%); }
+    .tooltip:hover .tooltiptext { visibility: visible; }
+    @media (max-width: 600px) {
+      input[type="file"], input[type="date"], input[type="text"], input[type="number"] { width: 100%; }
+      .manual-input { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -517,51 +40,30 @@
   <h1>📊 نظام محاسبة المطعم - Dashboard</h1>
   <div class="container">
     <div class="section">
-      <div class="section-title"><i class="fas fa-file-upload"></i> تحميل الملفات</div>
-      <div class="file-upload">
-        <input type="file" id="ordersFile" accept=".xlsx,.xls,.csv">
-        <label for="ordersFile" class="file-upload-label">
-          <i class="fas fa-file-excel"></i>
-          <span>ملف الأوامر (Orders)</span>
-        </label>
-      </div>
+      <div class="section-title">📁 تحميل الملفات</div>
       <div class="tooltip">
+        <label for="ordersFile">ملف الأوامر (Orders):</label>
         <span class="tooltiptext">قم بتحميل ملف Excel أو CSV يحتوي على بيانات الأوامر</span>
       </div>
+      <input type="file" id="ordersFile" accept=".xlsx,.xls,.csv">
       
-      <div class="file-upload">
-        <input type="file" id="payoutsFile" accept=".xlsx,.xls,.csv">
-        <label for="payoutsFile" class="file-upload-label">
-          <i class="fas fa-file-excel"></i>
-          <span>ملف الدفعات (Payouts)</span>
-        </label>
-      </div>
       <div class="tooltip">
+        <label for="payoutsFile">ملف الدفعات (Payouts):</label>
         <span class="tooltiptext">قم بتحميل ملف Excel أو CSV يحتوي على بيانات الدفعات</span>
       </div>
+      <input type="file" id="payoutsFile" accept=".xlsx,.xls,.csv">
       
-      <div class="file-upload">
-        <input type="file" id="refundsFile" accept=".xlsx,.xls,.csv">
-        <label for="refundsFile" class="file-upload-label">
-          <i class="fas fa-file-excel"></i>
-          <span>ملف التعويضات (Refunds/Adjustments)</span>
-        </label>
-      </div>
       <div class="tooltip">
+        <label for="refundsFile">ملف التعويضات (Refunds/Adjustments):</label>
         <span class="tooltiptext">قم بتحميل ملف Excel أو CSV يحتوي على بيانات التعويضات</span>
       </div>
+      <input type="file" id="refundsFile" accept=".xlsx,.xls,.csv">
       
       <div id="errorMessage" class="error"></div>
-      <div id="successMessage" class="success"></div>
-      
-      <div class="loading" id="loadingIndicator">
-        <div class="spinner"></div>
-        <p>جاري تحميل البيانات...</p>
-      </div>
     </div>
-    
+
     <div class="section manual-input">
-      <div class="section-title"><i class="fas fa-edit"></i> إدخال يدوي للمطاعم</div>
+      <div class="section-title">📝 إدخال يدوي للمطاعم</div>
       <div class="tooltip">
         <label for="merchantId">MERCHANT_ID:</label>
         <span class="tooltiptext">أدخل معرف المطعم (مثل 1050334)</span>
@@ -587,58 +89,33 @@
         <span class="tooltiptext">أدخل الإيرادات بالدرهم</span>
         <input type="number" id="revenueInput" placeholder="أدخل الإيرادات">
       </div>
-      <button onclick="addManualMerchant()"><i class="fas fa-plus"></i> إضافة/تحديث مطعم</button>
+      <button onclick="addManualMerchant()">إضافة/تحديث مطعم</button>
     </div>
-    
+
     <div class="section">
-      <div class="section-title"><i class="fas fa-filter"></i> فلترة حسب الفترة</div>
+      <div class="section-title">🔎 فلترة حسب الفترة</div>
       <input type="date" id="startDate" value="2025-09-01">
       <span>إلى</span>
       <input type="date" id="endDate" value="2025-09-07">
-      <button onclick="applyDateFilter()"><i class="fas fa-filter"></i> تصفية</button>
-      <button onclick="resetDateFilter()"><i class="fas fa-redo"></i> إعادة تعيين</button>
+      <button onclick="applyDateFilter()">تصفية</button>
     </div>
-    
+
     <div class="section">
-      <div class="section-title"><i class="fas fa-chart-line"></i> ملخص الفترة (1-7 سبتمبر 2025)</div>
+      <div class="section-title">📈 ملخص الفترة (1-7 سبتمبر 2025)</div>
       <div class="summary">
-        <div class="card">
-          <h3>عدد الأوامر</h3>
-          <span id="orderCount">0</span>
-        </div>
-        <div class="card">
-          <h3>إجمالي المبيعات</h3>
-          <span id="totalSales">0</span> AED
-        </div>
-        <div class="card">
-          <h3>إجمالي الخصومات</h3>
-          <span id="totalDiscount">0</span> AED
-        </div>
-        <div class="card">
-          <h3>إجمالي العمولات</h3>
-          <span id="totalCommission">0</span> AED
-        </div>
-        <div class="card">
-          <h3>إجمالي التعويضات</h3>
-          <span id="totalRefund">0</span> AED
-        </div>
-        <div class="card">
-          <h3>إجمالي الدفعات</h3>
-          <span id="totalPayouts">0</span> AED
-        </div>
-        <div class="card">
-          <h3>💰 صافي الربح</h3>
-          <span id="netProfit">0</span> AED
-        </div>
-        <div class="card">
-          <h3>📈 نسبة صافي الربح</h3>
-          <span id="netProfitRate">0</span>%
-        </div>
+        <div class="card">عدد الأوامر<br><span id="orderCount">0</span></div>
+        <div class="card">إجمالي المبيعات<br><span id="totalSales">0</span> AED</div>
+        <div class="card">إجمالي الخصومات<br><span id="totalDiscount">0</span> AED</div>
+        <div class="card">إجمالي العمولات<br><span id="totalCommission">0</span> AED</div>
+        <div class="card">إجمالي التعويضات<br><span id="totalRefund">0</span> AED</div>
+        <div class="card">إجمالي الدفعات<br><span id="totalPayouts">0</span> AED</div>
+        <div class="card">💰 صافي الربح<br><span id="netProfit">0</span> AED</div>
+        <div class="card">📈 نسبة صافي الربح<br><span id="netProfitRate">0</span>%</div>
       </div>
     </div>
-    
+
     <div class="section">
-      <div class="section-title"><i class="fas fa-store"></i> جدول إجمالي المطاعم</div>
+      <div class="section-title">📊 جدول إجمالي المطاعم</div>
       <input type="text" id="merchantsSearch" placeholder="🔍 بحث..." onkeyup="filterTable('merchantsTable', this.value)">
       <table id="merchantsTable">
         <thead>
@@ -655,105 +132,76 @@
         <tbody></tbody>
       </table>
     </div>
-    
+
     <div class="section">
-      <div class="tabs">
-        <div class="tab active" onclick="openTab(event, 'ordersTab')">الأوامر</div>
-        <div class="tab" onclick="openTab(event, 'payoutsTab')">الدفعات</div>
-        <div class="tab" onclick="openTab(event, 'refundsTab')">التعويضات</div>
-      </div>
-      
-      <div id="ordersTab" class="tab-content active">
-        <div class="section-title"><i class="fas fa-receipt"></i> جدول المعاملات</div>
-        <input type="text" id="orderSearch" placeholder="🔍 بحث..." onkeyup="filterTable('ordersTable', this.value)">
-        <table id="ordersTable">
-          <thead>
-            <tr>
-              <th>REFERENCE_ID</th>
-              <th>TRANSACTION_DATE</th>
-              <th>MERCHANT_NAME</th>
-              <th>FOOD_GROSS_BASKET_AMOUNT</th>
-              <th>PARTNER_FUNDED_PROMO_DISCOUNT</th>
-              <th>BILLING_PLATFORM_FEE</th>
-              <th>TOTAL_PAYOUT_AMOUNT</th>
-              <th>STATUS</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      
-      <div id="payoutsTab" class="tab-content">
-        <div class="section-title"><i class="fas fa-money-bill-wave"></i> جدول الدفعات من المنصة</div>
-        <input type="text" id="payoutSearch" placeholder="🔍 بحث..." onkeyup="filterTable('payoutsTable', this.value)">
-        <table id="payoutsTable">
-          <thead>
-            <tr>
-              <th>Billable ID</th>
-              <th>Start Date</th>
-              <th>End Date</th>
-              <th>Net Payout Amount</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      
-      <div id="refundsTab" class="tab-content">
-        <div class="section-title"><i class="fas fa-exclamation-triangle"></i> جدول التعويضات / النزاعات</div>
-        <input type="text" id="refundSearch" placeholder="🔍 بحث..." onkeyup="filterTable('refundsTable', this.value)">
-        <table id="refundsTable">
-          <thead>
-            <tr>
-              <th>REFERENCE_ID</th>
-              <th>TRANSACTION_DATE</th>
-              <th>DESCRIPTION</th>
-              <th>TOTAL_AMOUNT</th>
-              <th>CATEGORY</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+      <div class="section-title">📑 جدول المعاملات</div>
+      <input type="text" id="orderSearch" placeholder="🔍 بحث..." onkeyup="filterTable('ordersTable', this.value)">
+      <table id="ordersTable">
+        <thead>
+          <tr>
+            <th>REFERENCE_ID</th>
+            <th>TRANSACTION_DATE</th>
+            <th>MERCHANT_NAME</th>
+            <th>FOOD_GROSS_BASKET_AMOUNT</th>
+            <th>PARTNER_FUNDED_PROMO_DISCOUNT</th>
+            <th>BILLING_PLATFORM_FEE</th>
+            <th>TOTAL_PAYOUT_AMOUNT</th>
+            <th>STATUS</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </div>
-    
+
     <div class="section">
-      <div class="section-title"><i class="fas fa-chart-bar"></i> الرسوم البيانية</div>
-      <div class="charts-container">
-        <div class="chart-wrapper">
-          <h3 style="text-align: center; margin-bottom: 15px;">📊 مخطط الأداء المالي</h3>
-          <canvas id="chart" height="140"></canvas>
-        </div>
-        <div class="chart-wrapper">
-          <h3 style="text-align: center; margin-bottom: 15px;">🥧 توزيع المطاعم حسب الإيرادات</h3>
-          <canvas id="pieChart" height="140"></canvas>
-        </div>
-      </div>
+      <div class="section-title">💵 جدول الدفعات من المنصة</div>
+      <input type="text" placeholder="🔍 بحث..." onkeyup="filterTable('payoutsTable', this.value)">
+      <table id="payoutsTable">
+        <thead>
+          <tr>
+            <th>Billable ID</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Net Payout Amount</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </div>
-    
-    <div class="export-options">
-      <button class="export-btn export-excel" onclick="exportExcel()">
-        <i class="fas fa-file-excel"></i> تصدير Excel
-      </button>
-      <button class="export-btn export-pdf" onclick="exportPDF()">
-        <i class="fas fa-file-pdf"></i> تصدير PDF
-      </button>
-      <button class="export-btn export-chart" onclick="exportCharts()">
-        <i class="fas fa-chart-pie"></i> تصدير الرسوم البيانية
-      </button>
-      <button class="export-btn print-btn" onclick="window.print()">
-        <i class="fas fa-print"></i> طباعة التقرير
-      </button>
+
+    <div class="section">
+      <div class="section-title">⚠️ جدول التعويضات / النزاعات</div>
+      <input type="text" placeholder="🔍 بحث..." onkeyup="filterTable('refundsTable', this.value)">
+      <table id="refundsTable">
+        <thead>
+          <tr>
+            <th>REFERENCE_ID</th>
+            <th>TRANSACTION_DATE</th>
+            <th>DESCRIPTION</th>
+            <th>TOTAL_AMOUNT</th>
+            <th>CATEGORY</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <div class="section-title">📊 مخطط الأداء المالي</div>
+      <canvas id="chart" height="140"></canvas>
+    </div>
+
+    <div style="text-align:center;">
+      <button onclick="exportExcel()">⬇️ تصدير Excel</button>
+      <button onclick="exportPDF()">⬇️ تصدير PDF</button>
     </div>
   </div>
-  
-  <div id="notification" class="notification"></div>
-  
+
   <script>
     let orders = [], payouts = [], refunds = [], merchants = [];
     let filteredOrders = [], filteredPayouts = [], filteredRefunds = [], filteredMerchants = [];
-    let chartInstance = null, pieChartInstance = null;
-    
+    let chartInstance = null;
+
     // Predefined data for period (1-7 Sep 2025)
     const predefinedMerchants = [
       { MERCHANT_ID: "1050334", MERCHANT_NAME: "Crispy Chicken", MERCHANT_AREA: "Al Barsha 1", orderCount: 161, revenue: 8050, refunds: -250.60, payouts: 15788.37 },
@@ -765,50 +213,27 @@
       { MERCHANT_ID: "1066777", MERCHANT_NAME: "Crispy Chicken", MERCHANT_AREA: "Al Danah", orderCount: 173, revenue: 8650, refunds: -879.46, payouts: 16916.51 },
       { MERCHANT_ID: "1072566", MERCHANT_NAME: "Crispy Chicken", MERCHANT_AREA: "غير محدد", orderCount: 0, revenue: 0, refunds: 0, payouts: -72.71 }
     ];
-    
+
     // Initialize with predefined data
     merchants = [...predefinedMerchants];
     filteredMerchants = [...merchants];
-    
-    // Check for saved data in localStorage
-    window.onload = function() {
-      const savedData = localStorage.getItem('restaurantAccountingData');
-      if (savedData) {
-        try {
-          const parsedData = JSON.parse(savedData);
-          orders = parsedData.orders || [];
-          payouts = parsedData.payouts || [];
-          refunds = parsedData.refunds || [];
-          merchants = parsedData.merchants || [...predefinedMerchants];
-          filteredOrders = [...orders];
-          filteredPayouts = [...payouts];
-          filteredRefunds = [...refunds];
-          filteredMerchants = [...merchants];
-          renderAll();
-          showNotification('تم استعادة البيانات المحفوظة بنجاح', 'success');
-        } catch (e) {
-          console.error('Error loading saved data:', e);
-          renderAll();
-        }
-      } else {
-        renderAll();
-      }
-    };
-    
+    renderAll();
+
     document.getElementById('ordersFile').addEventListener('change', (e) => handleFile(e, 'orders'));
     document.getElementById('payoutsFile').addEventListener('change', (e) => handleFile(e, 'payouts'));
     document.getElementById('refundsFile').addEventListener('change', (e) => handleFile(e, 'refunds'));
-    
+
     function handleFile(e, type) {
       const file = e.target.files[0];
       if (!file) {
-        showError(`يرجى اختيار ملف لـ ${type}.`);
+        document.getElementById('errorMessage').textContent = `يرجى اختيار ملف صالح لـ ${type} (Excel أو CSV فقط).`;
         return;
       }
-      
-      clearMessages();
-      showLoading(true);
-      
+      if (!file.name.match(/\.(xlsx|xls|csv)$/i)) {
+        document.getElementById('errorMessage').textContent = `نوع الملف غير مدعوم لـ ${type}. يرجى اختيار ملف Excel أو CSV.`;
+        return;
+      }
+      document.getElementById('errorMessage').textContent = '';
       const reader = new FileReader();
       reader.onload = function(evt) {
         try {
@@ -820,78 +245,75 @@
                 let sheetData = results.data.map(row => ({
                   ...row,
                   'Start Date': row['Start Date'] ? new Date(row['Start Date']).toISOString().split('T')[0] : '',
-                  'End Date': row['End Date'] ? new Date(row['End Date']).toISOString().split('T')[0] : ''
+                  'End Date': row['End Date'] ? new Date(row['End Date']).toISOString().split('T')[0] : '',
+                  'TRANSACTION_DATE': row['TRANSACTION_DATE'] ? new Date(row['TRANSACTION_DATE']).toISOString().split('T')[0] : ''
                 }));
-                processFileData(type, sheetData);
+                if (type === 'orders') {
+                  orders = sheetData;
+                  filteredOrders = [...orders];
+                } else if (type === 'payouts') {
+                  payouts = sheetData;
+                  filteredPayouts = [...payouts];
+                } else if (type === 'refunds') {
+                  refunds = sheetData;
+                  filteredRefunds = [...refunds];
+                }
+                updateMerchants();
+                renderAll();
               },
               error: function(err) {
-                showLoading(false);
-                showError(`خطأ في قراءة ملف ${type}: ` + err.message);
+                document.getElementById('errorMessage').textContent = `خطأ في قراءة ملف ${type}: ${err.message}`;
               }
             });
+            reader.readAsText(file); // Use readAsText for CSV files
           } else {
             const data = new Uint8Array(evt.target.result);
             const workbook = XLSX.read(data, { type: 'array', dateNF: 'yyyy-mm-dd' });
             let sheetData = workbook.SheetNames[0] ? XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: '' }) : [];
-            processFileData(type, sheetData);
+            sheetData = sheetData.map(row => ({
+              ...row,
+              'TRANSACTION_DATE': row['TRANSACTION_DATE'] ? new Date(row['TRANSACTION_DATE']).toISOString().split('T')[0] : '',
+              'Start Date': row['Start Date'] ? new Date(row['Start Date']).toISOString().split('T')[0] : '',
+              'End Date': row['End Date'] ? new Date(row['End Date']).toISOString().split('T')[0] : ''
+            }));
+            if (type === 'orders') {
+              orders = sheetData;
+              filteredOrders = [...orders];
+            } else if (type === 'payouts') {
+              payouts = sheetData;
+              filteredPayouts = [...payouts];
+            } else if (type === 'refunds') {
+              refunds = sheetData;
+              filteredRefunds = [...refunds];
+            }
+            updateMerchants();
+            renderAll();
           }
         } catch (err) {
-          showLoading(false);
-          showError(`خطأ في قراءة ملف ${type}: ` + err.message);
+          document.getElementById('errorMessage').textContent = `خطأ في معالجة ملف ${type}: ${err.message}`;
         }
       };
-      
       reader.onerror = function() {
-        showLoading(false);
-        showError(`خطأ في تحميل ملف ${type}.`);
+        document.getElementById('errorMessage').textContent = `خطأ في تحميل ملف ${type}. تأكد من أن الملف صالح وغير تالف.`;
       };
-      
-      reader.readAsArrayBuffer(file);
-    }
-    
-    function processFileData(type, sheetData) {
-      if (type === 'orders') {
-        orders = sheetData;
-        filteredOrders = [...orders];
-      } else if (type === 'payouts') {
-        payouts = sheetData;
-        filteredPayouts = [...payouts];
-      } else if (type === 'refunds') {
-        refunds = sheetData;
-        filteredRefunds = [...refunds];
+      reader.readAsArrayBuffer(file); // Default to readAsArrayBuffer for Excel
+      if (file.name.endsWith('.csv')) {
+        reader.readAsText(file); // Override to readAsText for CSV
       }
-      
-      // Save to localStorage
-      saveDataToLocalStorage();
-      
-      updateMerchants();
-      renderAll();
-      showLoading(false);
-      showSuccess(`تم تحميل ملف ${type} بنجاح!`);
     }
-    
-    function saveDataToLocalStorage() {
-      const dataToSave = {
-        orders: orders,
-        payouts: payouts,
-        refunds: refunds,
-        merchants: merchants
-      };
-      localStorage.setItem('restaurantAccountingData', JSON.stringify(dataToSave));
-    }
-    
+
     function addManualMerchant() {
       const merchantId = document.getElementById('merchantId').value;
       const merchantName = document.getElementById('merchantName').value;
       const merchantArea = document.getElementById('merchantArea').value;
       const orderCount = Number(document.getElementById('orderCountInput').value) || 0;
       const revenue = Number(document.getElementById('revenueInput').value) || 0;
-      
+
       if (!merchantId || !merchantName) {
-        showError('يرجى إدخال MERCHANT_ID و MERCHANT_NAME.');
+        document.getElementById('errorMessage').textContent = 'يرجى إدخال MERCHANT_ID و MERCHANT_NAME.';
         return;
       }
-      
+
       const existingIndex = merchants.findIndex(m => m.MERCHANT_ID === merchantId);
       if (existingIndex >= 0) {
         merchants[existingIndex] = {
@@ -901,7 +323,6 @@
           orderCount: orderCount,
           revenue: revenue
         };
-        showSuccess('تم تحديث بيانات المطعم بنجاح!');
       } else {
         merchants.push({
           MERCHANT_ID: merchantId,
@@ -912,32 +333,28 @@
           refunds: 0,
           payouts: 0
         });
-        showSuccess('تمت إضافة المطعم بنجاح!');
       }
-      
+
       filteredMerchants = [...merchants];
-      saveDataToLocalStorage();
       renderMerchants();
       calculateSummary();
       renderChart();
-      renderPieChart();
-      
-      // Clear form
       document.getElementById('merchantId').value = '';
       document.getElementById('merchantName').value = '';
       document.getElementById('merchantArea').value = '';
       document.getElementById('orderCountInput').value = '';
       document.getElementById('revenueInput').value = '';
+      document.getElementById('errorMessage').textContent = '';
     }
-    
+
     function updateMerchants() {
       const merchantMap = new Map();
-      
+
       // Initialize with predefined data
       predefinedMerchants.forEach(m => {
         merchantMap.set(m.MERCHANT_ID, { ...m });
       });
-      
+
       // Update with orders data (if available)
       orders.forEach(row => {
         if (row.MERCHANT_ID) {
@@ -956,7 +373,7 @@
           merchantMap.get(row.MERCHANT_ID).revenue += Number(row.FOOD_GROSS_BASKET_AMOUNT) || 0;
         }
       });
-      
+
       // Update with refunds data
       refunds.forEach(row => {
         if (row.MERCHANT_ID) {
@@ -974,7 +391,7 @@
           merchantMap.get(row.MERCHANT_ID).refunds += Number(row.TOTAL_AMOUNT) || 0;
         }
       });
-      
+
       // Update with payouts data
       payouts.forEach(row => {
         const merchantId = row['Billable ID'];
@@ -993,12 +410,12 @@
           merchantMap.get(merchantId).payouts += Number(row['Net Payout Amount']) || 0;
         }
       });
-      
+
       merchants = Array.from(merchantMap.values());
       filteredMerchants = [...merchants];
       renderMerchants();
     }
-    
+
     function renderAll(){
       renderTable();
       renderPayouts();
@@ -1006,70 +423,42 @@
       renderMerchants();
       calculateSummary();
       renderChart();
-      renderPieChart();
     }
-    
+
     function applyDateFilter(){
       const start = document.getElementById('startDate').value;
       const end = document.getElementById('endDate').value;
-      
       filteredOrders = orders.filter(row => {
         const d = new Date(row.TRANSACTION_DATE);
         return (!start || d >= new Date(start)) && (!end || d <= new Date(end));
       });
-      
       filteredPayouts = payouts.filter(row => {
         const d = new Date(row['Start Date']);
         return (!start || d >= new Date(start)) && (!end || d <= new Date(end));
       });
-      
       filteredRefunds = refunds.filter(row => {
         const d = new Date(row.TRANSACTION_DATE);
         return (!start || d >= new Date(start)) && (!end || d <= new Date(end));
       });
-      
       filteredMerchants = merchants.filter(m => {
         const hasOrders = filteredOrders.some(o => o.MERCHANT_ID === m.MERCHANT_ID);
         const hasPayouts = filteredPayouts.some(p => p['Billable ID'] === m.MERCHANT_ID);
         const hasRefunds = filteredRefunds.some(r => r.MERCHANT_ID === m.MERCHANT_ID);
         return hasOrders || hasPayouts || hasRefunds || (m.orderCount > 0 || m.revenue > 0 || m.refunds !== 0 || m.payouts !== 0);
       });
-      
       renderAll();
-      showSuccess('تم تطبيق الفلتر بنجاح!');
     }
-    
-    function resetDateFilter() {
-      document.getElementById('startDate').value = '2025-09-01';
-      document.getElementById('endDate').value = '2025-09-07';
-      
-      filteredOrders = [...orders];
-      filteredPayouts = [...payouts];
-      filteredRefunds = [...refunds];
-      filteredMerchants = [...merchants];
-      
-      renderAll();
-      showSuccess('تم إعادة تعيين الفلتر بنجاح!');
-    }
-    
+
     function filterTable(tableId, query){
       const rows = document.querySelectorAll(`#${tableId} tbody tr`);
       rows.forEach(r => {
         r.style.display = r.textContent.toLowerCase().includes(query.toLowerCase()) ? '' : 'none';
       });
     }
-    
+
     function renderTable(){
       const tbody = document.querySelector('#ordersTable tbody');
       tbody.innerHTML = '';
-      
-      if (filteredOrders.length === 0) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td colspan="8" style="text-align: center; padding: 20px; color: #7f8c8d;">لا توجد بيانات لعرضها</td>`;
-        tbody.appendChild(tr);
-        return;
-      }
-      
       filteredOrders.forEach(row => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -1084,18 +473,10 @@
         tbody.appendChild(tr);
       });
     }
-    
+
     function renderPayouts(){
       const tbody = document.querySelector('#payoutsTable tbody');
       tbody.innerHTML = '';
-      
-      if (filteredPayouts.length === 0) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td colspan="4" style="text-align: center; padding: 20px; color: #7f8c8d;">لا توجد بيانات لعرضها</td>`;
-        tbody.appendChild(tr);
-        return;
-      }
-      
       filteredPayouts.forEach(row => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -1106,18 +487,10 @@
         tbody.appendChild(tr);
       });
     }
-    
+
     function renderRefunds(){
       const tbody = document.querySelector('#refundsTable tbody');
       tbody.innerHTML = '';
-      
-      if (filteredRefunds.length === 0) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td colspan="5" style="text-align: center; padding: 20px; color: #7f8c8d;">لا توجد بيانات لعرضها</td>`;
-        tbody.appendChild(tr);
-        return;
-      }
-      
       filteredRefunds.forEach(row => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -1129,18 +502,10 @@
         tbody.appendChild(tr);
       });
     }
-    
+
     function renderMerchants(){
       const tbody = document.querySelector('#merchantsTable tbody');
       tbody.innerHTML = '';
-      
-      if (filteredMerchants.length === 0) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td colspan="7" style="text-align: center; padding: 20px; color: #7f8c8d;">لا توجد بيانات لعرضها</td>`;
-        tbody.appendChild(tr);
-        return;
-      }
-      
       filteredMerchants.forEach(row => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -1154,10 +519,10 @@
         tbody.appendChild(tr);
       });
     }
-    
+
     function calculateSummary(){
       let totalSales = 0, totalDiscount = 0, totalCommission = 0, totalRefund = 0, totalPayouts = 0, totalOrders = 0;
-      
+
       filteredOrders.forEach(row => {
         totalSales += Number(row.FOOD_GROSS_BASKET_AMOUNT) || 0;
         totalDiscount += Math.abs(Number(row.PARTNER_FUNDED_PROMO_DISCOUNT) || 0);
@@ -1167,10 +532,10 @@
                            Math.abs(Number(row.BILLING_PAYMENT_GATEWAY_FEE_TAX) || 0);
         totalOrders += 1;
       });
-      
+
       filteredPayouts.forEach(row => totalPayouts += Number(row['Net Payout Amount']) || 0);
       filteredRefunds.forEach(row => totalRefund += Math.abs(Number(row.TOTAL_AMOUNT) || 0));
-      
+
       // Use predefined data if no orders file is uploaded
       if (filteredOrders.length === 0) {
         totalOrders = filteredMerchants.reduce((sum, m) => sum + (m.orderCount || 0), 0);
@@ -1178,26 +543,25 @@
         totalDiscount = totalSales * 0.1; // Assume 10% discounts
         totalCommission = totalSales * 0.15; // Assume 15% commissions
       }
-      
+
       const netProfit = totalSales - totalDiscount - totalCommission - totalRefund;
       const netProfitRate = totalSales ? ((netProfit / totalSales) * 100).toFixed(2) : 0;
-      
-      document.getElementById('orderCount').textContent = totalOrders.toLocaleString();
-      document.getElementById('totalSales').textContent = totalSales.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-      document.getElementById('totalDiscount').textContent = totalDiscount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-      document.getElementById('totalCommission').textContent = totalCommission.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-      document.getElementById('totalRefund').textContent = totalRefund.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-      document.getElementById('totalPayouts').textContent = totalPayouts.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-      document.getElementById('netProfit').textContent = netProfit.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+      document.getElementById('orderCount').textContent = totalOrders;
+      document.getElementById('totalSales').textContent = totalSales.toFixed(2);
+      document.getElementById('totalDiscount').textContent = totalDiscount.toFixed(2);
+      document.getElementById('totalCommission').textContent = totalCommission.toFixed(2);
+      document.getElementById('totalRefund').textContent = totalRefund.toFixed(2);
+      document.getElementById('totalPayouts').textContent = totalPayouts.toFixed(2);
+      document.getElementById('netProfit').textContent = netProfit.toFixed(2);
       document.getElementById('netProfitRate').textContent = netProfitRate;
     }
-    
+
     function renderChart(){
       const ctx = document.getElementById('chart').getContext('2d');
       if (chartInstance) {
         chartInstance.destroy();
       }
-      
       chartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -1205,257 +569,54 @@
           datasets: [{
             label: 'AED',
             data: [
-              parseFloat(document.getElementById('totalSales').textContent.replace(/,/g, '')) || 0,
-              parseFloat(document.getElementById('totalDiscount').textContent.replace(/,/g, '')) || 0,
-              parseFloat(document.getElementById('totalCommission').textContent.replace(/,/g, '')) || 0,
-              parseFloat(document.getElementById('totalRefund').textContent.replace(/,/g, '')) || 0,
-              parseFloat(document.getElementById('totalPayouts').textContent.replace(/,/g, '')) || 0,
-              parseFloat(document.getElementById('netProfit').textContent.replace(/,/g, '')) || 0
+              parseFloat(document.getElementById('totalSales').textContent) || 0,
+              parseFloat(document.getElementById('totalDiscount').textContent) || 0,
+              parseFloat(document.getElementById('totalCommission').textContent) || 0,
+              parseFloat(document.getElementById('totalRefund').textContent) || 0,
+              parseFloat(document.getElementById('totalPayouts').textContent) || 0,
+              parseFloat(document.getElementById('netProfit').textContent) || 0
             ],
             backgroundColor: ['#27ae60', '#e67e22', '#c0392b', '#8e44ad', '#16a085', '#2980b9']
           }]
         },
         options: {
           responsive: true,
-          plugins: { 
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  let label = context.dataset.label || '';
-                  if (label) {
-                    label += ': ';
-                  }
-                  if (context.parsed.y !== null) {
-                    label += new Intl.NumberFormat('ar-AE', { style: 'currency', currency: 'AED' }).format(context.parsed.y);
-                  }
-                  return label;
-                }
-              }
-            }
-          },
+          plugins: { legend: { display: false } },
           scales: {
-            y: { 
-              beginAtZero: true,
-              ticks: {
-                callback: function(value) {
-                  return value.toLocaleString() + ' AED';
-                }
-              }
-            }
+            y: { beginAtZero: true }
           }
         }
       });
     }
-    
-    function renderPieChart() {
-      const ctx = document.getElementById('pieChart').getContext('2d');
-      if (pieChartInstance) {
-        pieChartInstance.destroy();
-      }
-      
-      // Prepare data for pie chart (top 5 merchants by revenue)
-      const sortedMerchants = [...filteredMerchants].sort((a, b) => b.revenue - a.revenue);
-      const topMerchants = sortedMerchants.slice(0, 5);
-      const otherRevenue = sortedMerchants.slice(5).reduce((sum, m) => sum + m.revenue, 0);
-      
-      const labels = topMerchants.map(m => m.MERCHANT_NAME);
-      if (otherRevenue > 0) labels.push('مطاعم أخرى');
-      
-      const data = topMerchants.map(m => m.revenue);
-      if (otherRevenue > 0) data.push(otherRevenue);
-      
-      pieChartInstance = new Chart(ctx, {
-        type: 'pie',
-        data: {
-          labels: labels,
-          datasets: [{
-            data: data,
-            backgroundColor: [
-              '#3498db',
-              '#e74c3c',
-              '#2ecc71',
-              '#f39c12',
-              '#9b59b6',
-              '#1abc9c'
-            ]
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              position: 'bottom',
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  let label = context.label || '';
-                  if (label) {
-                    label += ': ';
-                  }
-                  if (context.parsed !== null) {
-                    const value = context.parsed;
-                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                    const percentage = Math.round((value / total) * 100);
-                    label += new Intl.NumberFormat('ar-AE', { style: 'currency', currency: 'AED' }).format(value);
-                    label += ` (${percentage}%)`;
-                  }
-                  return label;
-                }
-              }
-            }
-          }
-        }
-      });
-    }
-    
+
     function exportExcel(){
       const wb = XLSX.utils.book_new();
       const ws1 = XLSX.utils.json_to_sheet(filteredOrders);
       const ws2 = XLSX.utils.json_to_sheet(filteredPayouts);
       const ws3 = XLSX.utils.json_to_sheet(filteredRefunds);
       const ws4 = XLSX.utils.json_to_sheet(filteredMerchants);
-      
       XLSX.utils.book_append_sheet(wb, ws1, 'Orders');
       XLSX.utils.book_append_sheet(wb, ws2, 'Payouts');
       XLSX.utils.book_append_sheet(wb, ws3, 'Refunds');
       XLSX.utils.book_append_sheet(wb, ws4, 'Merchants');
-      
       XLSX.writeFile(wb, 'restaurant_report.xlsx');
-      showSuccess('تم تصدير ملف Excel بنجاح!');
     }
-    
+
     function exportPDF(){
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
-      
-      // Add Arabic font support
-      doc.addFont('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf', 'Roboto', 'normal');
-      doc.setFont('Roboto');
-      
-      doc.setFontSize(16);
-      doc.text("تقرير محاسبة المطعم (1-7 سبتمبر 2025)", 105, 15, { align: 'center' });
-      
-      doc.setFontSize(12);
-      doc.text("عدد الأوامر: " + document.getElementById('orderCount').textContent, 20, 30);
-      doc.text("إجمالي المبيعات: " + document.getElementById('totalSales').textContent + " AED", 20, 40);
-      doc.text("إجمالي الخصومات: " + document.getElementById('totalDiscount').textContent + " AED", 20, 50);
-      doc.text("إجمالي العمولات: " + document.getElementById('totalCommission').textContent + " AED", 20, 60);
-      doc.text("إجمالي التعويضات: " + document.getElementById('totalRefund').textContent + " AED", 20, 70);
-      doc.text("إجمالي الدفعات: " + document.getElementById('totalPayouts').textContent + " AED", 20, 80);
-      doc.text("صافي الربح: " + document.getElementById('netProfit').textContent + " AED", 20, 90);
-      doc.text("نسبة صافي الربح: " + document.getElementById('netProfitRate').textContent + "%", 20, 100);
-      
-      // Add chart as image
-      const chartCanvas = document.getElementById('chart');
-      const chartImage = chartCanvas.toDataURL('image/png');
-      doc.addImage(chartImage, 'PNG', 15, 110, 180, 90);
-      
+      doc.setFontSize(14);
+      doc.text("تقرير محاسبة المطعم (1-7 سبتمبر 2025)", 10, 15);
+      doc.text("عدد الأوامر: " + document.getElementById('orderCount').textContent, 10, 30);
+      doc.text("إجمالي المبيعات: " + document.getElementById('totalSales').textContent + " AED", 10, 40);
+      doc.text("إجمالي الخصومات: " + document.getElementById('totalDiscount').textContent + " AED", 10, 50);
+      doc.text("إجمالي العمولات: " + document.getElementById('totalCommission').textContent + " AED", 10, 60);
+      doc.text("إجمالي التعويضات: " + document.getElementById('totalRefund').textContent + " AED", 10, 70);
+      doc.text("إجمالي الدفعات: " + document.getElementById('totalPayouts').textContent + " AED", 10, 80);
+      doc.text("💰 صافي الربح: " + document.getElementById('netProfit').textContent + " AED", 10, 90);
+      doc.text("📈 نسبة صافي الربح: " + document.getElementById('netProfitRate').textContent + "%", 10, 100);
       doc.save('restaurant_report.pdf');
-      showSuccess('تم تصدير ملف PDF بنجاح!');
     }
-    
-    function exportCharts() {
-      // Create a new canvas to combine both charts
-      const combinedCanvas = document.createElement('canvas');
-      const ctx = combinedCanvas.getContext('2d');
-      combinedCanvas.width = 1200;
-      combinedCanvas.height = 600;
-      
-      // Fill background
-      ctx.fillStyle = 'white';
-      ctx.fillRect(0, 0, combinedCanvas.width, combinedCanvas.height);
-      
-      // Add title
-      ctx.fillStyle = '#2c3e50';
-      ctx.font = 'bold 24px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('تقرير الرسوم البيانية - نظام محاسبة المطعم', combinedCanvas.width / 2, 40);
-      
-      // Get chart canvases
-      const barChart = document.getElementById('chart');
-      const pieChart = document.getElementById('pieChart');
-      
-      // Draw bar chart
-      ctx.drawImage(barChart, 50, 80, 500, 300);
-      
-      // Draw pie chart
-      ctx.drawImage(pieChart, 650, 80, 500, 300);
-      
-      // Add date
-      ctx.fillStyle = '#7f8c8d';
-      ctx.font = '14px Arial';
-      ctx.textAlign = 'left';
-      ctx.fillText('تاريخ التقرير: ' + new Date().toLocaleDateString('ar-AE'), 50, 450);
-      
-      // Create download link
-      const link = document.createElement('a');
-      link.download = 'restaurant_charts.png';
-      link.href = combinedCanvas.toDataURL('image/png');
-      link.click();
-      
-      showSuccess('تم تصدير الرسوم البيانية بنجاح!');
-    }
-    
-    function openTab(evt, tabName) {
-      const tabContents = document.getElementsByClassName('tab-content');
-      for (let i = 0; i < tabContents.length; i++) {
-        tabContents[i].classList.remove('active');
-      }
-      
-      const tabs = document.getElementsByClassName('tab');
-      for (let i = 0; i < tabs.length; i++) {
-        tabs[i].classList.remove('active');
-      }
-      
-      document.getElementById(tabName).classList.add('active');
-      evt.currentTarget.classList.add('active');
-    }
-    
-    function showLoading(show) {
-      document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
-    }
-    
-    function showError(message) {
-      const errorElement = document.getElementById('errorMessage');
-      errorElement.textContent = message;
-      errorElement.style.display = 'block';
-      
-      showNotification(message, 'error');
-    }
-    
-    function showSuccess(message) {
-      const successElement = document.getElementById('successMessage');
-      successElement.textContent = message;
-      successElement.style.display = 'block';
-      
-      showNotification(message, 'success');
-      
-      // Hide success message after 3 seconds
-      setTimeout(() => {
-        successElement.style.display = 'none';
-      }, 3000);
-    }
-    
-    function showNotification(message, type) {
-      const notification = document.getElementById('notification');
-      notification.textContent = message;
-      notification.className = 'notification ' + type;
-      notification.classList.add('show');
-      
-      setTimeout(() => {
-        notification.classList.remove('show');
-      }, 3000);
-    }
-    
-    function clearMessages() {
-      document.getElementById('errorMessage').style.display = 'none';
-      document.getElementById('successMessage').style.display = 'none';
-    }
-    
-    // Initialize with predefined data
-    renderAll();
   </script>
 </body>
 </html>
