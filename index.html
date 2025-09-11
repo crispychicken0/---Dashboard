@@ -25,7 +25,15 @@
 <body>
   <h1>📊 نظام محاسبة المطعم - Dashboard</h1>
   <div class="container">
-    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+    <label for="ordersFile">ملف الأوامر (Orders):</label>
+    <input type="file" id="ordersFile" accept=".xlsx,.xls,.csv">
+    
+    <label for="payoutsFile">ملف الدفعات (Payouts):</label>
+    <input type="file" id="payoutsFile" accept=".xlsx,.xls,.csv">
+    
+    <label for="refundsFile">ملف التعويضات (Refunds/Adjustments):</label>
+    <input type="file" id="refundsFile" accept=".xlsx,.xls,.csv">
+    
     <div id="errorMessage" class="error"></div>
 
     <div>
@@ -82,11 +90,11 @@
     <table id="refundsTable">
       <thead>
         <tr>
-          <th>CASE_ID</th>
-          <th>DATE</th>
-          <th>REASON</th>
-          <th>AMOUNT</th>
-          <th>STATUS</th>
+          <th>REFERENCE_ID</th>
+          <th>TRANSACTION_DATE</th>
+          <th>DESCRIPTION</th>
+          <th>TOTAL_AMOUNT</th>
+          <th>CATEGORY</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -105,12 +113,14 @@
     let filteredOrders = [], filteredPayouts = [], filteredRefunds = [];
     let chartInstance = null;
 
-    document.getElementById('fileInput').addEventListener('change', handleFile);
+    document.getElementById('ordersFile').addEventListener('change', (e) => handleFile(e, 'orders'));
+    document.getElementById('payoutsFile').addEventListener('change', (e) => handleFile(e, 'payouts'));
+    document.getElementById('refundsFile').addEventListener('change', (e) => handleFile(e, 'refunds'));
 
-    function handleFile(e) {
+    function handleFile(e, type) {
       const file = e.target.files[0];
       if (!file) {
-        document.getElementById('errorMessage').textContent = 'يرجى اختيار ملف Excel.';
+        document.getElementById('errorMessage').textContent = `يرجى اختيار ملف لـ ${type}.`;
         return;
       }
       document.getElementById('errorMessage').textContent = '';
@@ -119,21 +129,24 @@
         try {
           const data = new Uint8Array(evt.target.result);
           const workbook = XLSX.read(data, { type: 'array', dateNF: 'yyyy-mm-dd' });
-
-          orders = workbook.SheetNames[0] ? XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]) : [];
-          payouts = workbook.SheetNames[1] ? XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[1]]) : [];
-          refunds = workbook.SheetNames[2] ? XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[2]]) : [];
-
-          filteredOrders = [...orders];
-          filteredPayouts = [...payouts];
-          filteredRefunds = [...refunds];
+          let sheetData = workbook.SheetNames[0] ? XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ''}) : [];
+          if (type === 'orders') {
+            orders = sheetData;
+            filteredOrders = [...orders];
+          } else if (type === 'payouts') {
+            payouts = sheetData;
+            filteredPayouts = [...payouts];
+          } else if (type === 'refunds') {
+            refunds = sheetData;
+            filteredRefunds = [...refunds];
+          }
           renderAll();
         } catch (err) {
-          document.getElementById('errorMessage').textContent = 'خطأ في قراءة الملف: ' + err.message;
+          document.getElementById('errorMessage').textContent = `خطأ في قراءة ملف ${type}: ` + err.message;
         }
       };
       reader.onerror = function() {
-        document.getElementById('errorMessage').textContent = 'خطأ في تحميل الملف.';
+        document.getElementById('errorMessage').textContent = `خطأ في تحميل ملف ${type}.`;
       };
       reader.readAsArrayBuffer(file);
     }
@@ -158,7 +171,7 @@
         return (!start || d >= new Date(start)) && (!end || d <= new Date(end));
       });
       filteredRefunds = refunds.filter(row => {
-        const d = new Date(row.DATE);
+        const d = new Date(row.TRANSACTION_DATE);
         return (!start || d >= new Date(start)) && (!end || d <= new Date(end));
       });
       renderAll();
@@ -209,11 +222,11 @@
       filteredRefunds.forEach(row => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${row.CASE_ID || ''}</td>
-          <td>${row.DATE || ''}</td>
-          <td>${row.REASON || ''}</td>
-          <td>${Number(row.AMOUNT || 0).toFixed(2)}</td>
-          <td>${row.STATUS || ''}</td>`;
+          <td>${row.REFERENCE_ID || ''}</td>
+          <td>${row.TRANSACTION_DATE || ''}</td>
+          <td>${row.DESCRIPTION || ''}</td>
+          <td>${Number(row.TOTAL_AMOUNT || 0).toFixed(2)}</td>
+          <td>${row.CATEGORY || ''}</td>`;
         tbody.appendChild(tr);
       });
     }
@@ -231,7 +244,7 @@
       });
 
       filteredPayouts.forEach(row => totalPayouts += Number(row.PAYOUT_AMOUNT) || 0);
-      filteredRefunds.forEach(row => totalRefund += Math.abs(Number(row.AMOUNT) || 0));
+      filteredRefunds.forEach(row => totalRefund += Math.abs(Number(row.TOTAL_AMOUNT) || 0));
 
       const netProfit = totalSales - totalDiscount - totalCommission - totalRefund;
       const netProfitRate = totalSales ? ((netProfit / totalSales) * 100).toFixed(2) : 0;
