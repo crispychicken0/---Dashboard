@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>نظام محاسبة المطعم - Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body { font-family: Tahoma, sans-serif; margin:20px; background:#f7f7f7; }
+    h1 { text-align:center; }
+    .container { background:white; padding:20px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
+    table { width:100%; border-collapse:collapse; margin-top:20px; }
+    th, td { border:1px solid #ccc; padding:6px; text-align:center; }
+    th { background:#eee; }
+    .summary { margin-top:20px; display:flex; gap:20px; flex-wrap:wrap; }
+    .card { background:#fafafa; padding:15px; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,0.1); flex:1; min-width:150px; }
+    canvas { margin-top:20px; }
+    button { margin:5px; padding:10px 15px; border:none; border-radius:8px; cursor:pointer; background:#3498db; color:white; }
+    button:hover { background:#2980b9; }
+  </style>
+</head>
+<body>
+  <h1>📊 نظام محاسبة المطعم - Dashboard</h1>
+  <div class="container">
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+    <div class="summary">
+      <div class="card">عدد الأوامر: <span id="orderCount">0</span></div>
+      <div class="card">إجمالي المبيعات: <span id="totalSales">0</span> AED</div>
+      <div class="card">إجمالي الخصومات: <span id="totalDiscount">0</span> AED</div>
+      <div class="card">إجمالي العمولات: <span id="totalCommission">0</span> AED</div>
+      <div class="card">إجمالي التعويضات: <span id="totalRefund">0</span> AED</div>
+      <div class="card">💰 صافي الربح: <span id="netProfit">0</span> AED</div>
+    </div>
+
+    <table id="ordersTable">
+      <thead>
+        <tr>
+          <th>REFERENCE_ID</th>
+          <th>TRANSACTION_DATE</th>
+          <th>MERCHANT_NAME</th>
+          <th>FOOD_GROSS_BASKET_AMOUNT</th>
+          <th>PARTNER_FUNDED_PROMO_DISCOUNT</th>
+          <th>BILLING_PLATFORM_FEE</th>
+          <th>TOTAL_PAYOUT_AMOUNT</th>
+          <th>STATUS</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <canvas id="chart" height="120"></canvas>
+
+    <button onclick="exportExcel()">⬇️ تصدير Excel</button>
+    <button onclick="exportPDF()">⬇️ تصدير PDF</button>
+  </div>
+
+  <script>
+    let orders = [];
+
+    document.getElementById('fileInput').addEventListener('change', handleFile);
+
+    function handleFile(e) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const json = XLSX.utils.sheet_to_json(sheet);
+        orders = json;
+        renderTable();
+        calculateSummary();
+        renderChart();
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function renderTable() {
+      const tbody = document.querySelector('#ordersTable tbody');
+      tbody.innerHTML = '';
+      orders.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${row.REFERENCE_ID || ''}</td>
+          <td>${row.TRANSACTION_DATE || ''}</td>
+          <td>${row.MERCHANT_NAME || ''}</td>
+          <td>${row.FOOD_GROSS_BASKET_AMOUNT || 0}</td>
+          <td>${row.PARTNER_FUNDED_PROMO_DISCOUNT || 0}</td>
+          <td>${row.BILLING_PLATFORM_FEE || 0}</td>
+          <td>${row.TOTAL_PAYOUT_AMOUNT || 0}</td>
+          <td>${row.STATUS || ''}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function calculateSummary() {
+      let totalSales = 0, totalDiscount = 0, totalCommission = 0, totalRefund = 0;
+      orders.forEach(row => {
+        totalSales += Number(row.FOOD_GROSS_BASKET_AMOUNT) || 0;
+        totalDiscount += Number(row.PARTNER_FUNDED_PROMO_DISCOUNT) || 0;
+        totalCommission += Number(row.BILLING_PLATFORM_FEE) || 0;
+        if(row.STATUS && row.STATUS.toLowerCase().includes('refund')) {
+          totalRefund += Number(row.TOTAL_PAYOUT_AMOUNT) || 0;
+        }
+      });
+      const netProfit = totalSales - totalDiscount - totalCommission - totalRefund;
+
+      document.getElementById('orderCount').textContent = orders.length;
+      document.getElementById('totalSales').textContent = totalSales.toFixed(2);
+      document.getElementById('totalDiscount').textContent = totalDiscount.toFixed(2);
+      document.getElementById('totalCommission').textContent = totalCommission.toFixed(2);
+      document.getElementById('totalRefund').textContent = totalRefund.toFixed(2);
+      document.getElementById('netProfit').textContent = netProfit.toFixed(2);
+    }
+
+    function renderChart() {
+      const ctx = document.getElementById('chart');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['المبيعات', 'الخصومات', 'العمولات', 'التعويضات', 'صافي الربح'],
+          datasets: [{
+            label: 'AED',
+            data: [
+              parseFloat(document.getElementById('totalSales').textContent),
+              parseFloat(document.getElementById('totalDiscount').textContent),
+              parseFloat(document.getElementById('totalCommission').textContent),
+              parseFloat(document.getElementById('totalRefund').textContent),
+              parseFloat(document.getElementById('netProfit').textContent)
+            ],
+            backgroundColor: ['#27ae60','#e67e22','#c0392b','#8e44ad','#2980b9']
+          }]
+        }
+      });
+    }
+
+    function exportExcel() {
+      const ws = XLSX.utils.json_to_sheet(orders);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Orders');
+      XLSX.writeFile(wb, 'orders_report.xlsx');
+    }
+
+    function exportPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.text("تقرير محاسبة المطعم", 10, 10);
+      doc.text("عدد الأوامر: " + document.getElementById('orderCount').textContent, 10, 20);
+      doc.text("صافي الربح: " + document.getElementById('netProfit').textContent + " AED", 10, 30);
+      doc.save('orders_report.pdf');
+    }
+  </script>
+</body>
+</html>
