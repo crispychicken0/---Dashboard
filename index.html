@@ -19,12 +19,14 @@
     button { margin:10px 5px 0; padding:10px 18px; border:none; border-radius:8px; cursor:pointer; background:#3498db; color:white; font-size:14px; }
     button:hover { background:#2980b9; }
     input[type="file"], input[type="date"] { margin:10px 5px; padding:6px; }
+    .error { color: red; margin: 10px 0; }
   </style>
 </head>
 <body>
   <h1>📊 نظام محاسبة المطعم - Dashboard</h1>
   <div class="container">
     <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+    <div id="errorMessage" class="error"></div>
 
     <div>
       🔎 فلترة حسب الفترة: 
@@ -100,23 +102,38 @@
 
   <script>
     let orders = [], payouts = [], refunds = [];
-    let filteredOrders = [];
+    let filteredOrders = [], filteredPayouts = [], filteredRefunds = [];
+    let chartInstance = null;
 
     document.getElementById('fileInput').addEventListener('change', handleFile);
 
     function handleFile(e) {
       const file = e.target.files[0];
+      if (!file) {
+        document.getElementById('errorMessage').textContent = 'يرجى اختيار ملف Excel.';
+        return;
+      }
+      document.getElementById('errorMessage').textContent = '';
       const reader = new FileReader();
       reader.onload = function(evt) {
-        const data = new Uint8Array(evt.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        
-        if (workbook.SheetNames[0]) orders = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-        if (workbook.SheetNames[1]) payouts = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[1]]);
-        if (workbook.SheetNames[2]) refunds = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[2]]);
+        try {
+          const data = new Uint8Array(evt.target.result);
+          const workbook = XLSX.read(data, { type: 'array', dateNF: 'yyyy-mm-dd' });
 
-        filteredOrders = [...orders];
-        renderAll();
+          orders = workbook.SheetNames[0] ? XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]) : [];
+          payouts = workbook.SheetNames[1] ? XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[1]]) : [];
+          refunds = workbook.SheetNames[2] ? XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[2]]) : [];
+
+          filteredOrders = [...orders];
+          filteredPayouts = [...payouts];
+          filteredRefunds = [...refunds];
+          renderAll();
+        } catch (err) {
+          document.getElementById('errorMessage').textContent = 'خطأ في قراءة الملف: ' + err.message;
+        }
+      };
+      reader.onerror = function() {
+        document.getElementById('errorMessage').textContent = 'خطأ في تحميل الملف.';
       };
       reader.readAsArrayBuffer(file);
     }
@@ -134,6 +151,14 @@
       const end = document.getElementById('endDate').value;
       filteredOrders = orders.filter(row => {
         const d = new Date(row.TRANSACTION_DATE);
+        return (!start || d >= new Date(start)) && (!end || d <= new Date(end));
+      });
+      filteredPayouts = payouts.filter(row => {
+        const d = new Date(row.PAYOUT_DATE);
+        return (!start || d >= new Date(start)) && (!end || d <= new Date(end));
+      });
+      filteredRefunds = refunds.filter(row => {
+        const d = new Date(row.DATE);
         return (!start || d >= new Date(start)) && (!end || d <= new Date(end));
       });
       renderAll();
@@ -155,10 +180,10 @@
           <td>${row.REFERENCE_ID || ''}</td>
           <td>${row.TRANSACTION_DATE || ''}</td>
           <td>${row.MERCHANT_NAME || ''}</td>
-          <td>${row.FOOD_GROSS_BASKET_AMOUNT || 0}</td>
-          <td>${row.PARTNER_FUNDED_PROMO_DISCOUNT || 0}</td>
-          <td>${row.BILLING_PLATFORM_FEE || 0}</td>
-          <td>${row.TOTAL_PAYOUT_AMOUNT || 0}</td>
+          <td>${Number(row.FOOD_GROSS_BASKET_AMOUNT || 0).toFixed(2)}</td>
+          <td>${Number(row.PARTNER_FUNDED_PROMO_DISCOUNT || 0).toFixed(2)}</td>
+          <td>${Number(row.BILLING_PLATFORM_FEE || 0).toFixed(2)}</td>
+          <td>${Number(row.TOTAL_PAYOUT_AMOUNT || 0).toFixed(2)}</td>
           <td>${row.STATUS || ''}</td>`;
         tbody.appendChild(tr);
       });
@@ -167,13 +192,13 @@
     function renderPayouts(){
       const tbody = document.querySelector('#payoutsTable tbody');
       tbody.innerHTML = '';
-      payouts.forEach(row => {
+      filteredPayouts.forEach(row => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${row.PAYOUT_ID || ''}</td>
           <td>${row.PAYOUT_DATE || ''}</td>
           <td>${row.PLATFORM || ''}</td>
-          <td>${row.PAYOUT_AMOUNT || 0}</td>`;
+          <td>${Number(row.PAYOUT_AMOUNT || 0).toFixed(2)}</td>`;
         tbody.appendChild(tr);
       });
     }
@@ -181,13 +206,13 @@
     function renderRefunds(){
       const tbody = document.querySelector('#refundsTable tbody');
       tbody.innerHTML = '';
-      refunds.forEach(row => {
+      filteredRefunds.forEach(row => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${row.CASE_ID || ''}</td>
           <td>${row.DATE || ''}</td>
           <td>${row.REASON || ''}</td>
-          <td>${row.AMOUNT || 0}</td>
+          <td>${Number(row.AMOUNT || 0).toFixed(2)}</td>
           <td>${row.STATUS || ''}</td>`;
         tbody.appendChild(tr);
       });
@@ -198,14 +223,17 @@
 
       filteredOrders.forEach(row => {
         totalSales += Number(row.FOOD_GROSS_BASKET_AMOUNT) || 0;
-        totalDiscount += Number(row.PARTNER_FUNDED_PROMO_DISCOUNT) || 0;
-        totalCommission += Number(row.BILLING_PLATFORM_FEE) || 0;
+        totalDiscount += Math.abs(Number(row.PARTNER_FUNDED_PROMO_DISCOUNT) || 0);
+        totalCommission += Math.abs(Number(row.BILLING_PLATFORM_FEE) || 0) + 
+                           Math.abs(Number(row.BILLING_PLATFORM_FEE_TAX) || 0) + 
+                           Math.abs(Number(row.BILLING_PAYMENT_GATEWAY_FEE) || 0) + 
+                           Math.abs(Number(row.BILLING_PAYMENT_GATEWAY_FEE_TAX) || 0);
       });
 
-      payouts.forEach(row => totalPayouts += Number(row.PAYOUT_AMOUNT) || 0);
-      refunds.forEach(row => totalRefund += Number(row.AMOUNT) || 0);
+      filteredPayouts.forEach(row => totalPayouts += Number(row.PAYOUT_AMOUNT) || 0);
+      filteredRefunds.forEach(row => totalRefund += Math.abs(Number(row.AMOUNT) || 0));
 
-      const netProfit = totalSales - (totalDiscount + totalCommission + totalRefund);
+      const netProfit = totalSales - totalDiscount - totalCommission - totalRefund;
       const netProfitRate = totalSales ? ((netProfit / totalSales) * 100).toFixed(2) : 0;
 
       document.getElementById('orderCount').textContent = filteredOrders.length;
@@ -219,33 +247,44 @@
     }
 
     function renderChart(){
-      const ctx = document.getElementById('chart');
-      new Chart(ctx, {
+      const ctx = document.getElementById('chart').getContext('2d');
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+      chartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
           labels: ['المبيعات', 'الخصومات', 'العمولات', 'التعويضات', 'الدفعات', 'صافي الربح'],
           datasets: [{
             label: 'AED',
             data: [
-              parseFloat(document.getElementById('totalSales').textContent),
-              parseFloat(document.getElementById('totalDiscount').textContent),
-              parseFloat(document.getElementById('totalCommission').textContent),
-              parseFloat(document.getElementById('totalRefund').textContent),
-              parseFloat(document.getElementById('totalPayouts').textContent),
-              parseFloat(document.getElementById('netProfit').textContent)
+              parseFloat(document.getElementById('totalSales').textContent) || 0,
+              parseFloat(document.getElementById('totalDiscount').textContent) || 0,
+              parseFloat(document.getElementById('totalCommission').textContent) || 0,
+              parseFloat(document.getElementById('totalRefund').textContent) || 0,
+              parseFloat(document.getElementById('totalPayouts').textContent) || 0,
+              parseFloat(document.getElementById('netProfit').textContent) || 0
             ],
             backgroundColor: ['#27ae60','#e67e22','#c0392b','#8e44ad','#16a085','#2980b9']
           }]
         },
-        options: { responsive:true, plugins:{ legend:{display:false} } }
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
       });
     }
 
     function exportExcel(){
       const wb = XLSX.utils.book_new();
       const ws1 = XLSX.utils.json_to_sheet(filteredOrders);
-      const ws2 = XLSX.utils.json_to_sheet(payouts);
-      const ws3 = XLSX.utils.json_to_sheet(refunds);
+      const ws2 = XLSX.utils.json_to_sheet(filteredPayouts);
+      const ws3 = XLSX.utils.json_to_sheet(filteredRefunds);
       XLSX.utils.book_append_sheet(wb, ws1, 'Orders');
       XLSX.utils.book_append_sheet(wb, ws2, 'Payouts');
       XLSX.utils.book_append_sheet(wb, ws3, 'Refunds');
