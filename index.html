@@ -2,37 +2,49 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>نظام محاسبة المطعم - Dashboard</title>
+  <title>📊 نظام محاسبة المطعم - Dashboard</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    body { font-family: Tahoma, sans-serif; margin:20px; background:#f7f7f7; }
-    h1 { text-align:center; }
-    .container { background:white; padding:20px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
+    body { font-family: Tahoma, sans-serif; margin:20px; background:#f5f6fa; }
+    h1 { text-align:center; margin-bottom:20px; }
+    .container { background:white; padding:20px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.15); }
+    .summary { margin:20px 0; display:flex; gap:15px; flex-wrap:wrap; }
+    .card { background:#fafafa; padding:15px; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,0.1); flex:1; min-width:160px; text-align:center; }
     table { width:100%; border-collapse:collapse; margin-top:20px; }
-    th, td { border:1px solid #ccc; padding:6px; text-align:center; }
+    th, td { border:1px solid #ccc; padding:8px; text-align:center; }
     th { background:#eee; }
-    .summary { margin-top:20px; display:flex; gap:20px; flex-wrap:wrap; }
-    .card { background:#fafafa; padding:15px; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,0.1); flex:1; min-width:150px; }
-    canvas { margin-top:20px; }
-    button { margin:5px; padding:10px 15px; border:none; border-radius:8px; cursor:pointer; background:#3498db; color:white; }
+    canvas { margin-top:30px; }
+    button { margin:10px 5px 0; padding:10px 18px; border:none; border-radius:8px; cursor:pointer; background:#3498db; color:white; font-size:14px; }
     button:hover { background:#2980b9; }
+    input[type="file"], input[type="date"] { margin:10px 5px; padding:6px; }
   </style>
 </head>
 <body>
   <h1>📊 نظام محاسبة المطعم - Dashboard</h1>
   <div class="container">
     <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
-    <div class="summary">
-      <div class="card">عدد الأوامر: <span id="orderCount">0</span></div>
-      <div class="card">إجمالي المبيعات: <span id="totalSales">0</span> AED</div>
-      <div class="card">إجمالي الخصومات: <span id="totalDiscount">0</span> AED</div>
-      <div class="card">إجمالي العمولات: <span id="totalCommission">0</span> AED</div>
-      <div class="card">إجمالي التعويضات: <span id="totalRefund">0</span> AED</div>
-      <div class="card">💰 صافي الربح: <span id="netProfit">0</span> AED</div>
+
+    <div>
+      🔎 فلترة حسب الفترة: 
+      <input type="date" id="startDate"> إلى <input type="date" id="endDate"> 
+      <button onclick="applyDateFilter()">تصفية</button>
     </div>
 
+    <div class="summary">
+      <div class="card">عدد الأوامر<br><span id="orderCount">0</span></div>
+      <div class="card">إجمالي المبيعات<br><span id="totalSales">0</span> AED</div>
+      <div class="card">إجمالي الخصومات<br><span id="totalDiscount">0</span> AED</div>
+      <div class="card">إجمالي العمولات<br><span id="totalCommission">0</span> AED</div>
+      <div class="card">إجمالي التعويضات<br><span id="totalRefund">0</span> AED</div>
+      <div class="card">إجمالي الدفعات<br><span id="totalPayouts">0</span> AED</div>
+      <div class="card">💰 صافي الربح<br><span id="netProfit">0</span> AED</div>
+      <div class="card">📈 نسبة صافي الربح<br><span id="netProfitRate">0</span>%</div>
+    </div>
+
+    <h3>📑 جدول المعاملات</h3>
+    <input type="text" id="orderSearch" placeholder="🔍 بحث..." onkeyup="filterTable('ordersTable', this.value)">
     <table id="ordersTable">
       <thead>
         <tr>
@@ -49,14 +61,46 @@
       <tbody></tbody>
     </table>
 
-    <canvas id="chart" height="120"></canvas>
+    <h3>💵 جدول الدفعات من المنصة</h3>
+    <input type="text" placeholder="🔍 بحث..." onkeyup="filterTable('payoutsTable', this.value)">
+    <table id="payoutsTable">
+      <thead>
+        <tr>
+          <th>PAYOUT_ID</th>
+          <th>PAYOUT_DATE</th>
+          <th>PLATFORM</th>
+          <th>PAYOUT_AMOUNT</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
 
-    <button onclick="exportExcel()">⬇️ تصدير Excel</button>
-    <button onclick="exportPDF()">⬇️ تصدير PDF</button>
+    <h3>⚠️ جدول التعويضات / النزاعات</h3>
+    <input type="text" placeholder="🔍 بحث..." onkeyup="filterTable('refundsTable', this.value)">
+    <table id="refundsTable">
+      <thead>
+        <tr>
+          <th>CASE_ID</th>
+          <th>DATE</th>
+          <th>REASON</th>
+          <th>AMOUNT</th>
+          <th>STATUS</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <canvas id="chart" height="140"></canvas>
+
+    <div style="text-align:center;">
+      <button onclick="exportExcel()">⬇️ تصدير Excel</button>
+      <button onclick="exportPDF()">⬇️ تصدير PDF</button>
+    </div>
   </div>
 
   <script>
-    let orders = [];
+    let orders = [], payouts = [], refunds = [];
+    let filteredOrders = [];
 
     document.getElementById('fileInput').addEventListener('change', handleFile);
 
@@ -66,21 +110,46 @@
       reader.onload = function(evt) {
         const data = new Uint8Array(evt.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const json = XLSX.utils.sheet_to_json(sheet);
-        orders = json;
-        renderTable();
-        calculateSummary();
-        renderChart();
+        
+        if (workbook.SheetNames[0]) orders = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+        if (workbook.SheetNames[1]) payouts = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[1]]);
+        if (workbook.SheetNames[2]) refunds = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[2]]);
+
+        filteredOrders = [...orders];
+        renderAll();
       };
       reader.readAsArrayBuffer(file);
     }
 
-    function renderTable() {
+    function renderAll(){
+      renderTable();
+      renderPayouts();
+      renderRefunds();
+      calculateSummary();
+      renderChart();
+    }
+
+    function applyDateFilter(){
+      const start = document.getElementById('startDate').value;
+      const end = document.getElementById('endDate').value;
+      filteredOrders = orders.filter(row => {
+        const d = new Date(row.TRANSACTION_DATE);
+        return (!start || d >= new Date(start)) && (!end || d <= new Date(end));
+      });
+      renderAll();
+    }
+
+    function filterTable(tableId, query){
+      const rows = document.querySelectorAll(`#${tableId} tbody tr`);
+      rows.forEach(r => {
+        r.style.display = r.textContent.toLowerCase().includes(query.toLowerCase()) ? '' : 'none';
+      });
+    }
+
+    function renderTable(){
       const tbody = document.querySelector('#ordersTable tbody');
       tbody.innerHTML = '';
-      orders.forEach(row => {
+      filteredOrders.forEach(row => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${row.REFERENCE_ID || ''}</td>
@@ -90,38 +159,71 @@
           <td>${row.PARTNER_FUNDED_PROMO_DISCOUNT || 0}</td>
           <td>${row.BILLING_PLATFORM_FEE || 0}</td>
           <td>${row.TOTAL_PAYOUT_AMOUNT || 0}</td>
-          <td>${row.STATUS || ''}</td>
-        `;
+          <td>${row.STATUS || ''}</td>`;
         tbody.appendChild(tr);
       });
     }
 
-    function calculateSummary() {
-      let totalSales = 0, totalDiscount = 0, totalCommission = 0, totalRefund = 0;
-      orders.forEach(row => {
+    function renderPayouts(){
+      const tbody = document.querySelector('#payoutsTable tbody');
+      tbody.innerHTML = '';
+      payouts.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${row.PAYOUT_ID || ''}</td>
+          <td>${row.PAYOUT_DATE || ''}</td>
+          <td>${row.PLATFORM || ''}</td>
+          <td>${row.PAYOUT_AMOUNT || 0}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderRefunds(){
+      const tbody = document.querySelector('#refundsTable tbody');
+      tbody.innerHTML = '';
+      refunds.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${row.CASE_ID || ''}</td>
+          <td>${row.DATE || ''}</td>
+          <td>${row.REASON || ''}</td>
+          <td>${row.AMOUNT || 0}</td>
+          <td>${row.STATUS || ''}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function calculateSummary(){
+      let totalSales = 0, totalDiscount = 0, totalCommission = 0, totalRefund = 0, totalPayouts = 0;
+
+      filteredOrders.forEach(row => {
         totalSales += Number(row.FOOD_GROSS_BASKET_AMOUNT) || 0;
         totalDiscount += Number(row.PARTNER_FUNDED_PROMO_DISCOUNT) || 0;
         totalCommission += Number(row.BILLING_PLATFORM_FEE) || 0;
-        if(row.STATUS && row.STATUS.toLowerCase().includes('refund')) {
-          totalRefund += Number(row.TOTAL_PAYOUT_AMOUNT) || 0;
-        }
       });
-      const netProfit = totalSales - totalDiscount - totalCommission - totalRefund;
 
-      document.getElementById('orderCount').textContent = orders.length;
+      payouts.forEach(row => totalPayouts += Number(row.PAYOUT_AMOUNT) || 0);
+      refunds.forEach(row => totalRefund += Number(row.AMOUNT) || 0);
+
+      const netProfit = totalSales - (totalDiscount + totalCommission + totalRefund);
+      const netProfitRate = totalSales ? ((netProfit / totalSales) * 100).toFixed(2) : 0;
+
+      document.getElementById('orderCount').textContent = filteredOrders.length;
       document.getElementById('totalSales').textContent = totalSales.toFixed(2);
       document.getElementById('totalDiscount').textContent = totalDiscount.toFixed(2);
       document.getElementById('totalCommission').textContent = totalCommission.toFixed(2);
       document.getElementById('totalRefund').textContent = totalRefund.toFixed(2);
+      document.getElementById('totalPayouts').textContent = totalPayouts.toFixed(2);
       document.getElementById('netProfit').textContent = netProfit.toFixed(2);
+      document.getElementById('netProfitRate').textContent = netProfitRate;
     }
 
-    function renderChart() {
+    function renderChart(){
       const ctx = document.getElementById('chart');
       new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: ['المبيعات', 'الخصومات', 'العمولات', 'التعويضات', 'صافي الربح'],
+          labels: ['المبيعات', 'الخصومات', 'العمولات', 'التعويضات', 'الدفعات', 'صافي الربح'],
           datasets: [{
             label: 'AED',
             data: [
@@ -129,28 +231,41 @@
               parseFloat(document.getElementById('totalDiscount').textContent),
               parseFloat(document.getElementById('totalCommission').textContent),
               parseFloat(document.getElementById('totalRefund').textContent),
+              parseFloat(document.getElementById('totalPayouts').textContent),
               parseFloat(document.getElementById('netProfit').textContent)
             ],
-            backgroundColor: ['#27ae60','#e67e22','#c0392b','#8e44ad','#2980b9']
+            backgroundColor: ['#27ae60','#e67e22','#c0392b','#8e44ad','#16a085','#2980b9']
           }]
-        }
+        },
+        options: { responsive:true, plugins:{ legend:{display:false} } }
       });
     }
 
-    function exportExcel() {
-      const ws = XLSX.utils.json_to_sheet(orders);
+    function exportExcel(){
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Orders');
-      XLSX.writeFile(wb, 'orders_report.xlsx');
+      const ws1 = XLSX.utils.json_to_sheet(filteredOrders);
+      const ws2 = XLSX.utils.json_to_sheet(payouts);
+      const ws3 = XLSX.utils.json_to_sheet(refunds);
+      XLSX.utils.book_append_sheet(wb, ws1, 'Orders');
+      XLSX.utils.book_append_sheet(wb, ws2, 'Payouts');
+      XLSX.utils.book_append_sheet(wb, ws3, 'Refunds');
+      XLSX.writeFile(wb, 'restaurant_report.xlsx');
     }
 
-    function exportPDF() {
+    function exportPDF(){
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
-      doc.text("تقرير محاسبة المطعم", 10, 10);
-      doc.text("عدد الأوامر: " + document.getElementById('orderCount').textContent, 10, 20);
-      doc.text("صافي الربح: " + document.getElementById('netProfit').textContent + " AED", 10, 30);
-      doc.save('orders_report.pdf');
+      doc.setFontSize(14);
+      doc.text("تقرير محاسبة المطعم", 10, 15);
+      doc.text("عدد الأوامر: " + document.getElementById('orderCount').textContent, 10, 30);
+      doc.text("إجمالي المبيعات: " + document.getElementById('totalSales').textContent + " AED", 10, 40);
+      doc.text("إجمالي الخصومات: " + document.getElementById('totalDiscount').textContent + " AED", 10, 50);
+      doc.text("إجمالي العمولات: " + document.getElementById('totalCommission').textContent + " AED", 10, 60);
+      doc.text("إجمالي التعويضات: " + document.getElementById('totalRefund').textContent + " AED", 10, 70);
+      doc.text("إجمالي الدفعات: " + document.getElementById('totalPayouts').textContent + " AED", 10, 80);
+      doc.text("💰 صافي الربح: " + document.getElementById('netProfit').textContent + " AED", 10, 90);
+      doc.text("📈 نسبة صافي الربح: " + document.getElementById('netProfitRate').textContent + "%", 10, 100);
+      doc.save('restaurant_report.pdf');
     }
   </script>
 </body>
