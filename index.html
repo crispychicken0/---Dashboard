@@ -3,884 +3,1673 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>📊 نظام محاسبة المطعم - تقرير الفروع</title>
+  <title>📊 نظام محاسبة متكامل لإدارة كريم فود</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body { font-family: Tahoma, sans-serif; margin: 20px; background: #f5f6fa; }
-    h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
-    .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 1200px; margin: auto; }
-    .section { margin-bottom: 30px; padding: 15px; background: #fafafa; border-radius: 8px; }
-    .section-title { font-size: 1.2em; color: #34495e; margin-bottom: 15px; }
-    .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 20px 0; }
-    .card { background: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center; transition: transform 0.2s; }
-    .card:hover { transform: translateY(-5px); }
-    .card span { font-size: 1.5em; }
-    .card.negative span { color: #e74c3c; }
-    .card.positive span { color: #27ae60; }
-    .alert { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; margin: 10px 0; }
-    .alert ul { margin: 5px 0; padding-right: 20px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
-    th { background: #ecf0f1; color: #2c3e50; }
-    .highlight { background: #fff3cd; }
-    .delete-btn { background: #e74c3c; padding: 5px 10px; font-size: 12px; }
-    .delete-btn:hover { background: #c0392b; }
-    canvas { margin: 30px auto; max-width: 100%; }
-    button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; background: #3498db; color: white; font-size: 14px; margin: 5px; }
-    button:hover { background: #2980b9; }
-    input[type="file"], input[type="date"], input[type="text"], input[type="number"] { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 5px; width: 200px; }
-    .error { color: #e74c3c; margin: 10px 0; }
-    .manual-input { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; padding: 15px; background: #f9f9f9; border-radius: 8px; }
-    .tooltip { position: relative; display: inline-block; }
-    .tooltip .tooltiptext { visibility: hidden; width: 140px; background: #2c3e50; color: white; text-align: center; border-radius: 5px; padding: 5px; position: absolute; z-index: 1; bottom: 125%; right: 50%; transform: translateX(50%); }
-    .tooltip:hover .tooltiptext { visibility: visible; }
-    @media (max-width: 600px) {
-      input[type="file"], input[type="date"], input[type="text"], input[type="number"] { width: 100%; }
-      .manual-input { grid-template-columns: 1fr; }
+    :root {
+      --primary-color: #2c3e50;
+      --secondary-color: #3498db;
+      --success-color: #27ae60;
+      --danger-color: #e74c3c;
+      --warning-color: #f39c12;
+      --info-color: #16a085;
+      --light-color: #ecf0f1;
+      --dark-color: #2c3e50;
+      --shadow: 0 4px 12px rgba(0,0,0,0.1);
+      --transition: all 0.3s ease;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      color: var(--dark-color);
+      line-height: 1.6;
+    }
+    
+    h1 {
+      text-align: center;
+      color: var(--dark-color);
+      margin-bottom: 30px;
+      font-weight: 700;
+      position: relative;
+      padding-bottom: 15px;
+    }
+    
+    h1:after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 4px;
+      background: var(--secondary-color);
+      border-radius: 2px;
+    }
+    
+    .container {
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: var(--shadow);
+      max-width: 1400px;
+      margin: auto;
+      transition: var(--transition);
+    }
+    
+    .container:hover {
+      box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+    }
+    
+    .section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #fafafa;
+      border-radius: 12px;
+      border-right: 4px solid var(--secondary-color);
+      transition: var(--transition);
+    }
+    
+    .section:hover {
+      transform: translateX(-5px);
+    }
+    
+    .section-title {
+      font-size: 1.3em;
+      color: var(--dark-color);
+      margin-bottom: 20px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin: 25px 0;
+    }
+    
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      text-align: center;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+    }
+    
+    .card:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 5px;
+    }
+    
+    .card.revenue:before { background: var(--success-color); }
+    .card.commission:before { background: var(--secondary-color); }
+    .card.discounts:before { background: var(--danger-color); }
+    .card.payout:before { background: var(--warning-color); }
+    .card.difference:before { background: var(--info-color); }
+    .card.clawbacks:before { background: #9b59b6; }
+    
+    .card h3 {
+      font-size: 0.9em;
+      color: #7f8c8d;
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+    
+    .card .value {
+      font-size: 1.8em;
+      font-weight: 700;
+      color: var(--dark-color);
+      display: block;
+      margin-bottom: 5px;
+    }
+    
+    .card .change {
+      font-size: 0.85em;
+      font-weight: 600;
+    }
+    
+    .card .change.positive {
+      color: var(--success-color);
+    }
+    
+    .card .change.negative {
+      color: var(--danger-color);
+    }
+    
+    .input-form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+      padding: 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+    }
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .form-group label {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--dark-color);
+    }
+    
+    .form-group input, .form-group select, .form-group textarea {
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: var(--transition);
+    }
+    
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: var(--secondary-color);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    }
+    
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    
+    th, td {
+      border: 1px solid #e0e0e0;
+      padding: 12px 15px;
+      text-align: center;
+    }
+    
+    th {
+      background: var(--light-color);
+      color: var(--dark-color);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.85em;
+      letter-spacing: 0.5px;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+    
+    .charts-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin: 30px 0;
+    }
+    
+    .chart-wrapper {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+    }
+    
+    .chart-wrapper h3 {
+      text-align: center;
+      margin-bottom: 15px;
+      color: var(--dark-color);
+    }
+    
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: var(--secondary-color);
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      margin: 8px;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    button:hover {
+      background: var(--primary-color);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .file-upload {
+      position: relative;
+      display: inline-block;
+      cursor: pointer;
+      margin: 10px 0;
+    }
+    
+    .file-upload input[type=file] {
+      position: absolute;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+    
+    .file-upload-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 20px;
+      background: white;
+      border: 2px dashed var(--secondary-color);
+      border-radius: 8px;
+      color: var(--secondary-color);
+      font-weight: 600;
+      transition: var(--transition);
+    }
+    
+    .file-upload:hover .file-upload-label {
+      background: rgba(52, 152, 219, 0.1);
+    }
+    
+    .tabs {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 2px solid var(--light-color);
+    }
+    
+    .tab {
+      padding: 12px 20px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #7f8c8d;
+      transition: var(--transition);
+      border-bottom: 3px solid transparent;
+    }
+    
+    .tab.active {
+      color: var(--secondary-color);
+      border-bottom: 3px solid var(--secondary-color);
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    .notification {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      padding: 15px 20px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      box-shadow: var(--shadow);
+      z-index: 1000;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: var(--transition);
+    }
+    
+    .notification.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    
+    .notification.success {
+      background: var(--success-color);
+    }
+    
+    .notification.error {
+      background: var(--danger-color);
+    }
+    
+    .notification.warning {
+      background: var(--warning-color);
+    }
+    
+    .export-options {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      margin: 30px 0;
+    }
+    
+    .export-btn {
+      padding: 12px 20px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      transition: var(--transition);
+    }
+    
+    .export-excel {
+      background: var(--success-color);
+      color: white;
+    }
+    
+    .export-excel:hover {
+      background: #219653;
+    }
+    
+    .export-pdf {
+      background: var(--danger-color);
+      color: white;
+    }
+    
+    .export-pdf:hover {
+      background: #c0392b;
+    }
+    
+    .export-chart {
+      background: #9b59b6;
+      color: white;
+    }
+    
+    .export-chart:hover {
+      background: #8e44ad;
+    }
+    
+    .print-btn {
+      background: var(--primary-color);
+      color: white;
+    }
+    
+    .print-btn:hover {
+      background: #1a252f;
+    }
+    
+    .status-tag {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8em;
+      font-weight: 600;
+    }
+    
+    .status-completed {
+      background: rgba(39, 174, 96, 0.1);
+      color: var(--success-color);
+    }
+    
+    .status-pending {
+      background: rgba(241, 196, 15, 0.1);
+      color: var(--warning-color);
+    }
+    
+    .status-overdue {
+      background: rgba(231, 76, 60, 0.1);
+      color: var(--danger-color);
+    }
+    
+    .reason-tag {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8em;
+      font-weight: 600;
+      margin: 2px;
+    }
+    
+    .reason-promo {
+      background: rgba(52, 152, 219, 0.1);
+      color: var(--secondary-color);
+    }
+    
+    .reason-quality {
+      background: rgba(231, 76, 60, 0.1);
+      color: var(--danger-color);
+    }
+    
+    .reason-delivery {
+      background: rgba(241, 196, 15, 0.1);
+      color: var(--warning-color);
+    }
+    
+    .reason-other {
+      background: rgba(46, 204, 113, 0.1);
+      color: var(--success-color);
+    }
+    
+    .alert {
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 8px;
+      border-right: 4px solid;
+    }
+    
+    .alert-info {
+      background: rgba(52, 152, 219, 0.1);
+      border-color: var(--secondary-color);
+      color: var(--secondary-color);
+    }
+    
+    .alert-warning {
+      background: rgba(241, 196, 15, 0.1);
+      border-color: var(--warning-color);
+      color: var(--warning-color);
+    }
+    
+    .alert-danger {
+      background: rgba(231, 76, 60, 0.1);
+      border-color: var(--danger-color);
+      color: var(--danger-color);
+    }
+    
+    @media (max-width: 768px) {
+      .charts-container {
+        grid-template-columns: 1fr;
+      }
+      
+      .input-form {
+        grid-template-columns: 1fr;
+      }
+      
+      .export-options {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .export-btn {
+        width: 100%;
+        max-width: 300px;
+        justify-content: center;
+      }
+    }
+    
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      
+      .container {
+        box-shadow: none;
+        padding: 0;
+      }
+      
+      .section {
+        break-inside: avoid;
+        border-right: none;
+        border-bottom: 1px solid #eee;
+      }
+      
+      button, .export-options, input[type="file"] {
+        display: none;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>📊 نظام محاسبة المطعم - تقرير الفروع</h1>
+  <h1>📊 نظام محاسبة متكامل لإدارة كريم فود</h1>
   <div class="container">
     <div class="section">
-      <div class="section-title">📁 تحميل بيانات المنصة</div>
-      <div class="tooltip">
-        <label for="ordersFile">ملف الأوامر:</label>
-        <span class="tooltiptext">تحميل ملف Excel أو CSV يحتوي على بيانات الأوامر (يتطلب أعمدة: MERCHANT_ID, MERCHANT_NAME, MERCHANT_AREA, FOOD_GROSS_BASKET_AMOUNT)</span>
+      <div class="section-title"><i class="fas fa-upload"></i> تحميل بيانات كريم فود</div>
+      <div class="file-upload">
+        <input type="file" id="careemFile" accept=".xlsx,.xls,.csv">
+        <label for="careemFile" class="file-upload-label">
+          <i class="fas fa-file-excel"></i>
+          <span>ملف أوامر كريم فود</span>
+        </label>
       </div>
-      <input type="file" id="ordersFile" accept=".xlsx,.xls,.csv">
+      <div class="file-upload">
+        <input type="file" id="payoutsFile" accept=".xlsx,.xls,.csv">
+        <label for="payoutsFile" class="file-upload-label">
+          <i class="fas fa-file-excel"></i>
+          <span>ملف الدفعات الأسبوعية</span>
+        </label>
+      </div>
+      <div class="file-upload">
+        <input type="file" id="adjustmentsFile" accept=".xlsx,.xls,.csv">
+        <label for="adjustmentsFile" class="file-upload-label">
+          <i class="fas fa-file-excel"></i>
+          <span>ملف التعديلات والخصومات</span>
+        </label>
+      </div>
+      <p style="margin: 10px 0; color: #7f8c8d;">قم بتحميل ملفات كريم فود لتحليل الفروقات وحساب العمولات والخصومات</p>
+    </div>
+    
+    <div class="section">
+      <div class="section-title"><i class="fas fa-cog"></i> إعدادات النظام</div>
+      <div class="input-form">
+        <div class="form-group">
+          <label for="commissionRate">نسبة عمولة كريم فود (%):</label>
+          <input type="number" id="commissionRate" min="0" max="100" step="0.1" value="25" placeholder="مثال: 25">
+        </div>
+        
+        <div class="form-group">
+          <label for="deliveryFee">رسوم التوصيل (درهم):</label>
+          <input type="number" id="deliveryFee" min="0" step="0.1" value="7" placeholder="مثال: 7">
+        </div>
+        
+        <div class="form-group">
+          <label for="vatRate">نسبة الضريبة (%):</label>
+          <input type="number" id="vatRate" min="0" max="100" step="0.1" value="5" placeholder="مثال: 5">
+        </div>
+        
+        <div class="form-group">
+          <label for="penaltyRate">نسبة الغرامات (%):</label>
+          <input type="number" id="penaltyRate" min="0" max="100" step="0.1" value="10" placeholder="مثال: 10">
+        </div>
+        
+        <div class="form-group">
+          <label for="maxDiscountRate">أقصى نسبة خصم مقبولة (%):</label>
+          <input type="number" id="maxDiscountRate" min="0" max="100" step="0.1" value="20" placeholder="مثال: 20">
+        </div>
+        
+        <div class="form-group">
+          <label>&nbsp;</label>
+          <button onclick="saveSettings()"><i class="fas fa-save"></i> حفظ الإعدادات</button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title"><i class="fas fa-chart-line"></i> ملخص الأداء المالي</div>
+      <div class="dashboard">
+        <div class="card revenue">
+          <h3>إجمالي الإيرادات</h3>
+          <span class="value" id="totalRevenue">0</span>
+          <span class="change positive" id="revenueChange">+0%</span>
+        </div>
+        <div class="card commission">
+          <h3>عمولة كريم فود</h3>
+          <span class="value" id="totalCommission">0</span>
+          <span class="change negative" id="commissionChange">+0%</span>
+        </div>
+        <div class="card discounts">
+          <h3>الخصومات والعروض</h3>
+          <span class="value" id="totalDiscounts">0</span>
+          <span class="change negative" id="discountsChange">+0%</span>
+        </div>
+        <div class="card clawbacks">
+          <h3>التعويضات والغرامات</h3>
+          <span class="value" id="totalClawbacks">0</span>
+          <span class="change negative" id="clawbacksChange">+0%</span>
+        </div>
+        <div class="card payout">
+          <h3>الدفعة الصافية</h3>
+          <span class="value" id="totalPayout">0</span>
+          <span class="change positive" id="payoutChange">+0%</span>
+        </div>
+        <div class="card difference">
+          <h3>الفرق المحسوب</h3>
+          <span class="value" id="totalDifference">0</span>
+          <span class="change negative" id="differenceChange">+0%</span>
+        </div>
+      </div>
       
-      <div class="tooltip">
-        <label for="payoutsFile">ملف الدفعات:</label>
-        <span class="tooltiptext">تحميل ملف Excel أو CSV يحتوي على بيانات الدفعات (يتطلب أعمدة: Billable ID, Net Payout Amount)</span>
+      <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i>
+        <strong>ملاحظة:</strong> الفرق المحسوب = الإيرادات - (العمولة + الخصومات + التعويضات + الرسوم)
       </div>
-      <input type="file" id="payoutsFile" accept=".xlsx,.xls,.csv">
+    </div>
+    
+    <div class="section">
+      <div class="section-title"><i class="fas fa-balance-scale"></i> تحليل الفروقات والأسباب</div>
+      <div class="tabs">
+        <div class="tab active" onclick="openTab(event, 'dailyAnalysisTab')">التحليل اليومي</div>
+        <div class="tab" onclick="openTab(event, 'weeklyAnalysisTab')">التحليل الأسبوعي</div>
+        <div class="tab" onclick="openTab(event, 'reasonsAnalysisTab')">أسباب الفروقات</div>
+      </div>
       
-      <div class="tooltip">
-        <label for="refundsFile">ملف التعويضات:</label>
-        <span class="tooltiptext">تحميل ملف Excel أو CSV يحتوي على بيانات التعويضات (يتطلب أعمدة: MERCHANT_ID, TOTAL_AMOUNT)</span>
+      <div id="dailyAnalysisTab" class="tab-content active">
+        <input type="text" id="dailySearch" placeholder="🔍 بحث..." onkeyup="filterTable('dailyTable', this.value)">
+        <table id="dailyTable">
+          <thead>
+            <tr>
+              <th>التاريخ</th>
+              <th>عدد الأوامر</th>
+              <th>الإيرادات</th>
+              <th>العمولة</th>
+              <th>الخصومات</th>
+              <th>التعويضات</th>
+              <th>الدفعة</th>
+              <th>الفرق</th>
+              <th>نسبة الفرق</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
       </div>
-      <input type="file" id="refundsFile" accept=".xlsx,.xls,.csv">
       
-      <div id="errorMessage" class="error"></div>
-      <button onclick="resetData()">🗑️ مسح جميع البيانات</button>
+      <div id="weeklyAnalysisTab" class="tab-content">
+        <input type="text" id="weeklySearch" placeholder="🔍 بحث..." onkeyup="filterTable('weeklyTable', this.value)">
+        <table id="weeklyTable">
+          <thead>
+            <tr>
+              <th>الأسبوع</th>
+              <th>عدد الأوامر</th>
+              <th>الإيرادات</th>
+              <th>العمولة</th>
+              <th>الخصومات</th>
+              <th>التعويضات</th>
+              <th>الدفعة</th>
+              <th>الفرق</th>
+              <th>نسبة الفرق</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      
+      <div id="reasonsAnalysisTab" class="tab-content">
+        <input type="text" id="reasonsSearch" placeholder="🔍 بحث..." onkeyup="filterTable('reasonsTable', this.value)">
+        <table id="reasonsTable">
+          <thead>
+            <tr>
+              <th>سبب الفرق</th>
+              <th>العدد</th>
+              <th>إجمالي المبلغ</th>
+              <th>نسبة من الإيرادات</th>
+              <th>متوسط المبلغ</th>
+              <th>الحالة</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
-
-    <div class="section manual-input">
-      <div class="section-title">📝 إدخال يدوي لفرع جديد</div>
-      <div class="tooltip">
-        <label for="merchantId">MERCHANT_ID:</label>
-        <span class="tooltiptext">أدخل معرف المطعم (مثل 1050334)</span>
-        <input type="text" id="merchantId" placeholder="أدخل MERCHANT_ID">
-      </div>
-      <div class="tooltip">
-        <label for="merchantName">MERCHANT_NAME:</label>
-        <span class="tooltiptext">أدخل اسم المطعم (مثل Crispy Chicken)</span>
-        <input type="text" id="merchantName" placeholder="أدخل اسم المطعم">
-      </div>
-      <div class="tooltip">
-        <label for="merchantArea">MERCHANT_AREA:</label>
-        <span class="tooltiptext">أدخل المنطقة (مثل BARSHA)</span>
-        <input type="text" id="merchantArea" placeholder="أدخل المنطقة">
-      </div>
-      <div class="tooltip">
-        <label for="orderCountInput">عدد الأوامر:</label>
-        <span class="tooltiptext">أدخل عدد الأوامر (رقم صحيح غير سالب)</span>
-        <input type="number" id="orderCountInput" placeholder="أدخل عدد الأوامر" min="0">
-      </div>
-      <div class="tooltip">
-        <label for="revenueInput">الإيرادات (درهم):</label>
-        <span class="tooltiptext">أدخل الإيرادات بالدرهم (رقم غير سالب)</span>
-        <input type="number" id="revenueInput" placeholder="أدخل الإيرادات" min="0" step="any">
-      </div>
-      <div class="tooltip">
-        <label for="refundsInput">التعويضات (درهم):</label>
-        <span class="tooltiptext">أدخل التعويضات بالدرهم (قيمة سالبة أو صفر)</span>
-        <input type="number" id="refundsInput" placeholder="أدخل التعويضات" step="any">
-      </div>
-      <div class="tooltip">
-        <label for="payoutsInput">الدفعات الصافية (درهم):</label>
-        <span class="tooltiptext">أدخل الدفعات الصافية بالدرهم</span>
-        <input type="number" id="payoutsInput" placeholder="أدخل الدفعات" step="any">
-      </div>
-      <button onclick="addManualMerchant()">إضافة/تحديث فرع</button>
-    </div>
-
+    
     <div class="section">
-      <div class="section-title">🔎 فلترة حسب الفترة</div>
-      <input type="date" id="startDate" value="2025-09-01">
-      <span>إلى</span>
-      <input type="date" id="endDate" value="2025-09-07">
-      <button onclick="applyDateFilter()">تصفية</button>
-    </div>
-
-    <div class="section">
-      <div class="section-title">📈 ملخص الإيرادات</div>
-      <div class="summary">
-        <div class="card">عدد الأوامر<br><span id="orderCount">0</span></div>
-        <div class="card">إجمالي الإيرادات<br><span id="totalSales">0</span> AED</div>
-        <div class="card">إجمالي الخصومات<br><span id="totalDiscount">0</span> AED</div>
-        <div class="card">إجمالي العمولات<br><span id="totalCommission">0</span> AED</div>
-        <div class="card">إجمالي التعويضات<br><span id="totalRefund">0</span> AED</div>
-        <div class="card" id="payoutsCard">إجمالي الدفعات<br><span id="totalPayouts">0</span> AED</div>
-        <div class="card">💰 صافي الربح<br><span id="netProfit">0</span> AED</div>
-        <div class="card">📈 نسبة صافي الربح<br><span id="netProfitRate">0</span>%</div>
+      <div class="section-title"><i class="fas fa-chart-bar"></i> الرسوم البيانية التحليلية</div>
+      <div class="charts-container">
+        <div class="chart-wrapper">
+          <h3>تطور الإيرادات والفروقات</h3>
+          <canvas id="revenueVsDifferenceChart" height="140"></canvas>
+        </div>
+        <div class="chart-wrapper">
+          <h3>توزيع الخصومات والتعويضات</h3>
+          <canvas id="deductionsDistributionChart" height="140"></canvas>
+        </div>
+        <div class="chart-wrapper">
+          <h3>أسباب الفروقات</h3>
+          <canvas id="reasonsChart" height="140"></canvas>
+        </div>
+        <div class="chart-wrapper">
+          <h3>مقارنة الفترات</h3>
+          <canvas id="periodComparisonChart" height="140"></canvas>
+        </div>
       </div>
-      <div id="alerts" class="alert"></div>
     </div>
-
+    
     <div class="section">
-      <div class="section-title">📊 تقرير الفروع</div>
-      <input type="text" id="merchantsSearch" placeholder="🔍 بحث..." onkeyup="filterTable('merchantsTable', this.value)">
-      <table id="merchantsTable">
-        <thead>
-          <tr>
-            <th>MERCHANT_ID</th>
-            <th>اسم الفرع</th>
-            <th>المنطقة</th>
-            <th>عدد الأوامر</th>
-            <th>الإيرادات (درهم)</th>
-            <th>التعويضات (درهم)</th>
-            <th>نسبة التعويضات</th>
-            <th>الدفعات الصافية (درهم)</th>
-            <th>صافي الربح (درهم)</th>
-            <th>إجراء</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <div class="section-title"><i class="fas fa-exclamation-triangle"></i> التنبيهات والتوصيات</div>
+      <div id="alertsContainer">
+        <div class="alert alert-warning">
+          <i class="fas fa-exclamation-triangle"></i>
+          <strong>تنبيه:</strong> نسبة الخصومات الحالية (18%) تقترب من الحد الأقصى المسموح (20%)
+        </div>
+        <div class="alert alert-danger">
+          <i class="fas fa-exclamation-circle"></i>
+          <strong>خطر:</strong> هناك 5 أوامر بتعويضات عالية تتطلب مراجعة فورية
+        </div>
+        <div class="alert alert-info">
+          <i class="fas fa-lightbulb"></i>
+          <strong>توصية:</strong>可以考虑协商降低佣金比例或优化促销策略以减少差异
+        </div>
+      </div>
     </div>
-
-    <div class="section">
-      <div class="section-title">📊 تفاصيل الدفعات</div>
-      <input type="text" id="payoutsSearch" placeholder="🔍 بحث..." onkeyup="filterTable('payoutsTable', this.value)">
-      <table id="payoutsTable">
-        <thead>
-          <tr>
-            <th>Billable ID</th>
-            <th>الدفعة الصافية (درهم)</th>
-            <th>تاريخ البداية</th>
-            <th>تاريخ النهاية</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-
-    <div class="section">
-      <div class="section-title">📊 مخطط الأداء المالي</div>
-      <canvas id="summaryChart" height="140"></canvas>
-    </div>
-
-    <div class="section">
-      <div class="section-title">📊 مخطط مقارنة الفروع</div>
-      <canvas id="branchesChart" height="140"></canvas>
-    </div>
-
-    <div style="text-align:center;">
-      <button onclick="exportExcel()">⬇️ تصدير Excel</button>
-      <button onclick="exportPDF()">⬇️ تصدير PDF</button>
+    
+    <div class="export-options">
+      <button class="export-btn export-excel" onclick="exportExcel()">
+        <i class="fas fa-file-excel"></i> تصدير Excel
+      </button>
+      <button class="export-btn export-pdf" onclick="exportPDF()">
+        <i class="fas fa-file-pdf"></i> تصدير PDF
+      </button>
+      <button class="export-btn export-chart" onclick="exportCharts()">
+        <i class="fas fa-chart-pie"></i> تصدير الرسوم البيانية
+      </button>
+      <button class="export-btn print-btn" onclick="window.print()">
+        <i class="fas fa-print"></i> طباعة التقرير
+      </button>
     </div>
   </div>
-
+  
+  <div id="notification" class="notification"></div>
+  
   <script>
-    let orders = [], payouts = [], refunds = [], merchants = [];
-    let filteredOrders = [], filteredPayouts = [], filteredRefunds = [], filteredMerchants = [];
-    let summaryChartInstance = null, branchesChartInstance = null;
-    const DISCOUNT_RATE = 0.1; // 10% discount rate
-    const COMMISSION_RATE = 0.15; // 15% commission rate
-
-    // Predefined payouts data
-    const predefinedPayouts = [
-      { 'Billable ID': '1050334', 'Net Payout Amount': 15788.37, 'Start Date': '2025-09-01', 'End Date': '2025-09-07' },
-      { 'Billable ID': '1057118', 'Net Payout Amount': 17291.33, 'Start Date': '2025-09-01', 'End Date': '2025-09-07' },
-      { 'Billable ID': '1057120', 'Net Payout Amount': 13094.65, 'Start Date': '2025-09-01', 'End Date': '2025-09-07' },
-      { 'Billable ID': '1057122', 'Net Payout Amount': 9844.31, 'Start Date': '2025-09-01', 'End Date': '2025-09-07' },
-      { 'Billable ID': '1057123', 'Net Payout Amount': 12318.12, 'Start Date': '2025-09-01', 'End Date': '2025-09-07' },
-      { 'Billable ID': '1061662', 'Net Payout Amount': 12724.81, 'Start Date': '2025-09-01', 'End Date': '2025-09-07' },
-      { 'Billable ID': '1066777', 'Net Payout Amount': 16916.51, 'Start Date': '2025-09-01', 'End Date': '2025-09-07' }
-    ];
-
-    // Predefined merchants data
-    const predefinedMerchants = [
-      { MERCHANT_ID: '1066777', MERCHANT_NAME: 'Crispy Chicken', MERCHANT_AREA: 'Al Danah', orderCount: 653, revenue: 27084.00, refunds: -542.60, payouts: 16916.51 },
-      { MERCHANT_ID: '1061662', MERCHANT_NAME: 'Crispy Chicken', MERCHANT_AREA: 'Al Satwa', orderCount: 438, revenue: 18088.00, refunds: -112.00, payouts: 12724.81 },
-      { MERCHANT_ID: '1057123', MERCHANT_NAME: 'Crispy Chicken', MERCHANT_AREA: 'Mohammed Bin Zayed City', orderCount: 442, revenue: 18218.00, refunds: -219.00, payouts: 12318.12 },
-      { MERCHANT_ID: '1057118', MERCHANT_NAME: 'Crispy Chicken', MERCHANT_AREA: 'Al Danah', orderCount: 592, revenue: 24992.00, refunds: -330.07, payouts: 17291.33 },
-      { MERCHANT_ID: '1057122', MERCHANT_NAME: 'Crispy Chicken', MERCHANT_AREA: 'Al Rawdah', orderCount: 334, revenue: 13998.00, refunds: -67.00, payouts: 9844.31 },
-      { MERCHANT_ID: '1057120', MERCHANT_NAME: 'Crispy Chicken', MERCHANT_AREA: 'Al Markaziyah', orderCount: 440, revenue: 19281.00, refunds: -315.80, payouts: 13094.65 },
-      { MERCHANT_ID: '1050334', MERCHANT_NAME: 'Crispy Chicken', MERCHANT_AREA: 'Al Barsha 1', orderCount: 542, revenue: 22928.00, refunds: -453.70, payouts: 15788.37 }
-    ];
-
-    // Initialize with predefined data
-    merchants = [...predefinedMerchants];
-    payouts = [...predefinedPayouts];
-    filteredMerchants = [...merchants];
-    filteredPayouts = [...payouts];
-    renderAll();
-
-    document.getElementById('ordersFile').addEventListener('change', (e) => handleFile(e, 'orders'));
-    document.getElementById('payoutsFile').addEventListener('change', (e) => handleFile(e, 'payouts'));
-    document.getElementById('refundsFile').addEventListener('change', (e) => handleFile(e, 'refunds'));
-
-    function handleFile(e, type) {
-      const file = e.target.files[0];
-      if (!file) {
-        document.getElementById('errorMessage').textContent = `يرجى اختيار ملف صالح لـ ${type} (Excel أو CSV فقط).`;
-        return;
-      }
-      if (!file.name.match(/\.(xlsx|xls|csv)$/i)) {
-        document.getElementById('errorMessage').textContent = `نوع الملف غير مدعوم لـ ${type}. يرجى اختيار ملف Excel أو CSV.`;
-        return;
-      }
-      document.getElementById('errorMessage').textContent = '';
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        try {
-          if (file.name.endsWith('.csv')) {
-            Papa.parse(evt.target.result, {
-              header: true,
-              skipEmptyLines: true,
-              complete: function(results) {
-                const normalizedData = normalizeColumnNames(results.data);
-                if (type === 'orders') {
-                  const requiredColumns = ['MERCHANT_ID', 'FOOD_GROSS_BASKET_AMOUNT'];
-                  if (!requiredColumns.every(col => normalizedData[0] && normalizedData[0].hasOwnProperty(col))) {
-                    document.getElementById('errorMessage').textContent = `ملف الأوامر يفتقد الأعمدة الضرورية: ${requiredColumns.join(', ')}`;
-                    return;
-                  }
-                  const merchantIds = normalizedData.map(row => row.MERCHANT_ID).filter(id => id);
-                  const uniqueIds = new Set(merchantIds);
-                  if (uniqueIds.size < merchantIds.length) {
-                    document.getElementById('errorMessage').textContent = `تم اكتشاف تكرار في MERCHANT_ID في ملف ${type}. يرجى التحقق من البيانات.`;
-                  }
-                } else if (type === 'payouts') {
-                  const requiredColumns = ['Billable ID', 'Net Payout Amount'];
-                  if (!requiredColumns.every(col => normalizedData[0] && normalizedData[0].hasOwnProperty(col))) {
-                    document.getElementById('errorMessage').textContent = `ملف الدفعات يفتقد الأعمدة الضرورية: ${requiredColumns.join(', ')}`;
-                    return;
-                  }
-                  const invalidPayouts = normalizedData.filter(row => isNaN(Number(row['Net Payout Amount'])));
-                  if (invalidPayouts.length > 0) {
-                    document.getElementById('errorMessage').textContent = `ملف الدفعات يحتوي على قيم غير رقمية في Net Payout Amount.`;
-                    return;
-                  }
-                } else if (type === 'refunds') {
-                  const requiredColumns = ['MERCHANT_ID', 'TOTAL_AMOUNT'];
-                  if (!requiredColumns.every(col => normalizedData[0] && normalizedData[0].hasOwnProperty(col))) {
-                    document.getElementById('errorMessage').textContent = `ملف التعويضات يفتقد الأعمدة الضرورية: ${requiredColumns.join(', ')}`;
-                    return;
-                  }
-                }
-                let sheetData = normalizedData.map(row => ({
-                  ...row,
-                  'Start Date': row['Start Date'] ? new Date(row['Start Date']).toISOString().split('T')[0] : '',
-                  'End Date': row['End Date'] ? new Date(row['End Date']).toISOString().split('T')[0] : '',
-                  'TRANSACTION_DATE': row['TRANSACTION_DATE'] ? new Date(row['TRANSACTION_DATE']).toISOString().split('T')[0] : ''
-                }));
-                if (type === 'orders') {
-                  orders = sheetData;
-                  filteredOrders = [...orders];
-                } else if (type === 'payouts') {
-                  payouts = sheetData;
-                  filteredPayouts = [...payouts];
-                } else if (type === 'refunds') {
-                  refunds = sheetData;
-                  filteredRefunds = [...refunds];
-                }
-                updateMerchants();
-                renderAll();
-              },
-              error: function(err) {
-                document.getElementById('errorMessage').textContent = `خطأ في قراءة ملف ${type}: ${err.message}. تأكد من أن الملف يحتوي على الأعمدة الصحيحة.`;
-              }
-            });
-            reader.readAsText(file);
-          } else {
-            const data = new Uint8Array(evt.target.result);
-            const workbook = XLSX.read(data, { type: 'array', dateNF: 'yyyy-mm-dd' });
-            let sheetData = workbook.SheetNames[0] ? XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: '' }) : [];
-            const normalizedData = normalizeColumnNames(sheetData);
-            if (type === 'orders') {
-              const requiredColumns = ['MERCHANT_ID', 'FOOD_GROSS_BASKET_AMOUNT'];
-              if (!requiredColumns.every(col => normalizedData[0] && normalizedData[0].hasOwnProperty(col))) {
-                document.getElementById('errorMessage').textContent = `ملف الأوامر يفتقد الأعمدة الضرورية: ${requiredColumns.join(', ')}`;
-                return;
-              }
-              const merchantIds = normalizedData.map(row => row.MERCHANT_ID).filter(id => id);
-              const uniqueIds = new Set(merchantIds);
-              if (uniqueIds.size < merchantIds.length) {
-                document.getElementById('errorMessage').textContent = `تم اكتشاف تكرار في MERCHANT_ID في ملف ${type}. يرجى التحقق من البيانات.`;
-              }
-            } else if (type === 'payouts') {
-              const requiredColumns = ['Billable ID', 'Net Payout Amount'];
-              if (!requiredColumns.every(col => normalizedData[0] && normalizedData[0].hasOwnProperty(col))) {
-                document.getElementById('errorMessage').textContent = `ملف الدفعات يفتقد الأعمدة الضرورية: ${requiredColumns.join(', ')}`;
-                return;
-              }
-              const invalidPayouts = normalizedData.filter(row => isNaN(Number(row['Net Payout Amount'])));
-              if (invalidPayouts.length > 0) {
-                document.getElementById('errorMessage').textContent = `ملف الدفعات يحتوي على قيم غير رقمية في Net Payout Amount.`;
-                return;
-              }
-            } else if (type === 'refunds') {
-              const requiredColumns = ['MERCHANT_ID', 'TOTAL_AMOUNT'];
-              if (!requiredColumns.every(col => normalizedData[0] && normalizedData[0].hasOwnProperty(col))) {
-                document.getElementById('errorMessage').textContent = `ملف التعويضات يفتقد الأعمدة الضرورية: ${requiredColumns.join(', ')}`;
-                return;
-              }
-            }
-            sheetData = normalizedData.map(row => ({
-              ...row,
-              'TRANSACTION_DATE': row['TRANSACTION_DATE'] ? new Date(row['TRANSACTION_DATE']).toISOString().split('T')[0] : '',
-              'Start Date': row['Start Date'] ? new Date(row['Start Date']).toISOString().split('T')[0] : '',
-              'End Date': row['End Date'] ? new Date(row['End Date']).toISOString().split('T')[0] : ''
-            }));
-            if (type === 'orders') {
-              orders = sheetData;
-              filteredOrders = [...orders];
-            } else if (type === 'payouts') {
-              payouts = sheetData;
-              filteredPayouts = [...payouts];
-            } else if (type === 'refunds') {
-              refunds = sheetData;
-              filteredRefunds = [...refunds];
-            }
-            updateMerchants();
-            renderAll();
-          }
-        } catch (err) {
-          document.getElementById('errorMessage').textContent = `خطأ في معالجة ملف ${type}: ${err.message}. تأكد من أن الملف يحتوي على الأعمدة الصحيحة وغير تالف.`;
-        }
-      };
-      reader.onerror = function() {
-        document.getElementById('errorMessage').textContent = `خطأ في تحميل ملف ${type}. تأكد من أن الملف صالح وغير تالف.`;
-      };
-      reader.readAsArrayBuffer(file);
-      if (file.name.endsWith('.csv')) {
-        reader.readAsText(file);
-      }
+    // System settings
+    let systemSettings = {
+      commissionRate: 25,
+      deliveryFee: 7,
+      vatRate: 5,
+      penaltyRate: 10,
+      maxDiscountRate: 20
+    };
+    
+    // Data structure for Careem Food analysis
+    let careemData = {
+      orders: [],
+      payouts: [],
+      adjustments: [],
+      dailyAnalysis: [],
+      weeklyAnalysis: [],
+      reasonsAnalysis: []
+    };
+    
+    // Chart instances
+    let revenueVsDifferenceChartInstance = null;
+    let deductionsDistributionChartInstance = null;
+    let reasonsChartInstance = null;
+    let periodComparisonChartInstance = null;
+    
+    // Initialize sample data
+    function initializeSampleData() {
+      // Sample orders data
+      careemData.orders = [
+        { id: "ORD001", date: "2025-09-01", customer: "أحمد محمد", amount: 120, discount: 20, commission: 30, status: "completed" },
+        { id: "ORD002", date: "2025-09-01", customer: "فاطمة علي", amount: 85, discount: 15, commission: 21.25, status: "completed" },
+        { id: "ORD003", date: "2025-09-02", customer: "محمد سعيد", amount: 95, discount: 10, commission: 23.75, status: "completed" },
+        { id: "ORD004", date: "2025-09-02", customer: "خالد عبدالله", amount: 110, discount: 25, commission: 27.5, status: "completed" },
+        { id: "ORD005", date: "2025-09-03", customer: "نورة سالم", amount: 75, discount: 5, commission: 18.75, status: "completed" },
+        { id: "ORD006", date: "2025-09-03", customer: "سارة أحمد", amount: 130, discount: 30, commission: 32.5, status: "completed" },
+        { id: "ORD007", date: "2025-09-04", customer: "عبدالله محمد", amount: 90, discount: 15, commission: 22.5, status: "completed" },
+        { id: "ORD008", date: "2025-09-04", customer: "مريم خالد", amount: 105, discount: 20, commission: 26.25, status: "completed" },
+        { id: "ORD009", date: "2025-09-05", customer: "يوسف علي", amount: 80, discount: 10, commission: 20, status: "completed" },
+        { id: "ORD010", date: "2025-09-05", customer: "ليلى أحمد", amount: 125, discount: 25, commission: 31.25, status: "completed" }
+      ];
+      
+      // Sample adjustments data
+      careemData.adjustments = [
+        { id: "ADJ001", date: "2025-09-02", orderID: "ORD001", amount: -15, reason: "quality", description: "مشاكل في الجودة", type: "clawback" },
+        { id: "ADJ002", date: "2025-09-03", orderID: "ORD003", amount: -10, reason: "delivery", description: "تأخير في التوصيل", type: "clawback" },
+        { id: "ADJ003", date: "2025-09-04", orderID: "ORD005", amount: -5, reason: "wrong", description: "طلب خاطئ", type: "clawback" },
+        { id: "ADJ004", date: "2025-09-05", orderID: "ORD007", amount: -8, reason: "promo", description: "خصم ترويجي", type: "discount" },
+        { id: "ADJ005", date: "2025-09-06", orderID: "ORD009", amount: -12, reason: "quality", description: "مشاكل في الجودة", type: "clawback" }
+      ];
+      
+      // Sample payouts data
+      careemData.payouts = [
+        { id: "PAYOUT001", date: "2025-09-08", amount: 450, period: "2025-09-01 to 2025-09-07", status: "completed" },
+        { id: "PAYOUT002", date: "2025-09-15", amount: 520, period: "2025-09-08 to 2025-09-14", status: "pending" }
+      ];
+      
+      // Process data for analysis
+      processDataForAnalysis();
     }
-
-    function normalizeColumnNames(data) {
-      return data.map(row => {
-        const normalizedRow = {};
-        for (const key in row) {
-          const normalizedKey = key.trim().replace(/\s+/g, '_').toUpperCase();
-          normalizedRow[normalizedKey] = row[key];
+    
+    // Process data for analysis
+    function processDataForAnalysis() {
+      // Group orders by date
+      const dailyData = {};
+      careemData.orders.forEach(order => {
+        if (!dailyData[order.date]) {
+          dailyData[order.date] = {
+            orders: [],
+            revenue: 0,
+            commission: 0,
+            discounts: 0,
+            clawbacks: 0
+          };
         }
-        return normalizedRow;
+        dailyData[order.date].orders.push(order);
+        dailyData[order.date].revenue += order.amount;
+        dailyData[order.date].commission += order.commission;
+        dailyData[order.date].discounts += order.discount;
       });
-    }
-
-    function addManualMerchant() {
-      const merchantId = document.getElementById('merchantId').value.trim();
-      const merchantName = document.getElementById('merchantName').value.trim();
-      const merchantArea = document.getElementById('merchantArea').value.trim();
-      const orderCount = Number(document.getElementById('orderCountInput').value) || 0;
-      const revenue = Number(document.getElementById('revenueInput').value) || 0;
-      const refunds = Number(document.getElementById('refundsInput').value) || 0;
-      const payouts = Number(document.getElementById('payoutsInput').value) || 0;
-
-      if (!merchantId || !merchantName) {
-        document.getElementById('errorMessage').textContent = 'يرجى إدخال MERCHANT_ID و MERCHANT_NAME.';
-        return;
-      }
-      if (orderCount < 0) {
-        document.getElementById('errorMessage').textContent = 'عدد الأوامر يجب أن يكون غير سالب.';
-        return;
-      }
-      if (revenue < 0) {
-        document.getElementById('errorMessage').textContent = 'الإيرادات يجب أن تكون غير سالبة.';
-        return;
-      }
-      if (refunds > 0) {
-        document.getElementById('errorMessage').textContent = 'التعويضات يجب أن تكون قيمة سالبة أو صفر.';
-        return;
-      }
-
-      const existingIndex = merchants.findIndex(m => m.MERCHANT_ID === merchantId);
-      if (existingIndex >= 0) {
-        merchants[existingIndex] = {
-          ...merchants[existingIndex],
-          MERCHANT_NAME: merchantName,
-          MERCHANT_AREA: merchantArea,
-          orderCount: orderCount,
-          revenue: revenue,
-          refunds: refunds,
-          payouts: payouts
+      
+      // Add clawbacks to daily data
+      careemData.adjustments.forEach(adj => {
+        if (dailyData[adj.date]) {
+          dailyData[adj.date].clawbacks += Math.abs(adj.amount);
+        }
+      });
+      
+      // Create daily analysis
+      careemData.dailyAnalysis = Object.keys(dailyData).map(date => {
+        const data = dailyData[date];
+        const totalDeductions = data.commission + data.discounts + data.clawbacks;
+        const payout = data.revenue - totalDeductions;
+        const difference = data.revenue - payout;
+        const differenceRate = data.revenue > 0 ? (difference / data.revenue * 100).toFixed(2) : 0;
+        
+        return {
+          date: date,
+          orderCount: data.orders.length,
+          revenue: data.revenue,
+          commission: data.commission,
+          discounts: data.discounts,
+          clawbacks: data.clawbacks,
+          payout: payout,
+          difference: difference,
+          differenceRate: differenceRate
         };
-      } else {
-        merchants.push({
-          MERCHANT_ID: merchantId,
-          MERCHANT_NAME: merchantName,
-          MERCHANT_AREA: merchantArea,
-          orderCount: orderCount,
-          revenue: revenue,
-          refunds: refunds,
-          payouts: payouts
-        });
+      });
+      
+      // Create weekly analysis
+      const weeklyData = {};
+      careemData.dailyAnalysis.forEach(day => {
+        const week = getWeekNumber(day.date);
+        if (!weeklyData[week]) {
+          weeklyData[week] = {
+            orders: [],
+            revenue: 0,
+            commission: 0,
+            discounts: 0,
+            clawbacks: 0
+          };
+        }
+        weeklyData[week].orders.push(day);
+        weeklyData[week].revenue += day.revenue;
+        weeklyData[week].commission += day.commission;
+        weeklyData[week].discounts += day.discounts;
+        weeklyData[week].clawbacks += day.clawbacks;
+      });
+      
+      careemData.weeklyAnalysis = Object.keys(weeklyData).map(week => {
+        const data = weeklyData[week];
+        const totalDeductions = data.commission + data.discounts + data.clawbacks;
+        const payout = data.revenue - totalDeductions;
+        const difference = data.revenue - payout;
+        const differenceRate = data.revenue > 0 ? (difference / data.revenue * 100).toFixed(2) : 0;
+        
+        return {
+          week: week,
+          orderCount: data.orders.reduce((sum, day) => sum + day.orderCount, 0),
+          revenue: data.revenue,
+          commission: data.commission,
+          discounts: data.discounts,
+          clawbacks: data.clawbacks,
+          payout: payout,
+          difference: difference,
+          differenceRate: differenceRate
+        };
+      });
+      
+      // Create reasons analysis
+      const reasonsData = {};
+      careemData.adjustments.forEach(adj => {
+        if (!reasonsData[adj.reason]) {
+          reasonsData[adj.reason] = {
+            count: 0,
+            totalAmount: 0,
+            type: adj.type
+          };
+        }
+        reasonsData[adj.reason].count++;
+        reasonsData[adj.reason].totalAmount += Math.abs(adj.amount);
+      });
+      
+      careemData.reasonsAnalysis = Object.keys(reasonsData).map(reason => {
+        const data = reasonsData[reason];
+        const totalRevenue = careemData.orders.reduce((sum, order) => sum + order.amount, 0);
+        const revenuePercentage = totalRevenue > 0 ? (data.totalAmount / totalRevenue * 100).toFixed(2) : 0;
+        const averageAmount = data.count > 0 ? (data.totalAmount / data.count).toFixed(2) : 0;
+        
+        return {
+          reason: getReasonText(reason),
+          count: data.count,
+          totalAmount: data.totalAmount,
+          revenuePercentage: revenuePercentage,
+          averageAmount: averageAmount,
+          type: data.type,
+          status: data.totalAmount > 100 ? "مراجعة" : "طبيعي"
+        };
+      });
+    }
+    
+    // Get week number
+    function getWeekNumber(dateString) {
+      const date = new Date(dateString);
+      const startOfYear = new Date(date.getFullYear(), 0, 1);
+      const days = Math.floor((date - startOfYear) / (24 * 60 * 60 * 1000));
+      return Math.ceil((days + startOfYear.getDay() + 1) / 7);
+    }
+    
+    // Get reason text
+    function getReasonText(reason) {
+      const reasons = {
+        'quality': 'مشاكل في الجودة',
+        'delivery': 'تأخير في التوصيل',
+        'wrong': 'طلب خاطئ',
+        'promo': 'خصم ترويجي',
+        'other': 'سبب آخر'
+      };
+      return reasons[reason] || reason;
+    }
+    
+    // Initialize the application
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeSampleData();
+      updateDashboard();
+      renderTables();
+      renderCharts();
+      updateAlerts();
+    });
+    
+    // Update dashboard
+    function updateDashboard() {
+      const totalRevenue = careemData.orders.reduce((sum, order) => sum + order.amount, 0);
+      const totalCommission = careemData.orders.reduce((sum, order) => sum + order.commission, 0);
+      const totalDiscounts = careemData.orders.reduce((sum, order) => sum + order.discount, 0);
+      const totalClawbacks = careemData.adjustments.reduce((sum, adj) => sum + Math.abs(adj.amount), 0);
+      const totalPayout = careemData.payouts.reduce((sum, payout) => sum + payout.amount, 0);
+      const totalDifference = totalRevenue - totalPayout;
+      
+      document.getElementById('totalRevenue').textContent = formatCurrency(totalRevenue);
+      document.getElementById('totalCommission').textContent = formatCurrency(totalCommission);
+      document.getElementById('totalDiscounts').textContent = formatCurrency(totalDiscounts);
+      document.getElementById('totalClawbacks').textContent = formatCurrency(totalClawbacks);
+      document.getElementById('totalPayout').textContent = formatCurrency(totalPayout);
+      document.getElementById('totalDifference').textContent = formatCurrency(totalDifference);
+      
+      // Calculate changes (using dummy data for demonstration)
+      document.getElementById('revenueChange').textContent = '+12.5%';
+      document.getElementById('commissionChange').textContent = '+8.3%';
+      document.getElementById('discountsChange').textContent = '+15.7%';
+      document.getElementById('clawbacksChange').textContent = '+22.1%';
+      document.getElementById('payoutChange').textContent = '+9.8%';
+      document.getElementById('differenceChange').textContent = '+18.2%';
+    }
+    
+    // Render tables
+    function renderTables() {
+      renderDailyTable();
+      renderWeeklyTable();
+      renderReasonsTable();
+    }
+    
+    // Render daily table
+    function renderDailyTable() {
+      const tbody = document.querySelector('#dailyTable tbody');
+      tbody.innerHTML = '';
+      
+      careemData.dailyAnalysis.forEach(day => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${day.date}</td>
+          <td>${day.orderCount}</td>
+          <td>${formatCurrency(day.revenue)}</td>
+          <td>${formatCurrency(day.commission)}</td>
+          <td>${formatCurrency(day.discounts)}</td>
+          <td>${formatCurrency(day.clawbacks)}</td>
+          <td>${formatCurrency(day.payout)}</td>
+          <td class="${day.difference > 0 ? 'negative' : 'positive'}">${formatCurrency(day.difference)}</td>
+          <td class="${day.differenceRate > 20 ? 'danger' : 'warning'}">${day.differenceRate}%</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    
+    // Render weekly table
+    function renderWeeklyTable() {
+      const tbody = document.querySelector('#weeklyTable tbody');
+      tbody.innerHTML = '';
+      
+      careemData.weeklyAnalysis.forEach(week => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>الأسبوع ${week.week}</td>
+          <td>${week.orderCount}</td>
+          <td>${formatCurrency(week.revenue)}</td>
+          <td>${formatCurrency(week.commission)}</td>
+          <td>${formatCurrency(week.discounts)}</td>
+          <td>${formatCurrency(week.clawbacks)}</td>
+          <td>${formatCurrency(week.payout)}</td>
+          <td class="${week.difference > 0 ? 'negative' : 'positive'}">${formatCurrency(week.difference)}</td>
+          <td class="${week.differenceRate > 20 ? 'danger' : 'warning'}">${week.differenceRate}%</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    
+    // Render reasons table
+    function renderReasonsTable() {
+      const tbody = document.querySelector('#reasonsTable tbody');
+      tbody.innerHTML = '';
+      
+      careemData.reasonsAnalysis.forEach(reason => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><span class="reason-tag reason-${reason.type}">${reason.reason}</span></td>
+          <td>${reason.count}</td>
+          <td>${formatCurrency(reason.totalAmount)}</td>
+          <td>${reason.revenuePercentage}%</td>
+          <td>${formatCurrency(reason.averageAmount)}</td>
+          <td><span class="status-tag status-${reason.status === 'مراجعة' ? 'overdue' : 'completed'}">${reason.status}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    
+    // Render charts
+    function renderCharts() {
+      renderRevenueVsDifferenceChart();
+      renderDeductionsDistributionChart();
+      renderReasonsChart();
+      renderPeriodComparisonChart();
+    }
+    
+    // Render revenue vs difference chart
+    function renderRevenueVsDifferenceChart() {
+      const ctx = document.getElementById('revenueVsDifferenceChart').getContext('2d');
+      
+      if (revenueVsDifferenceChartInstance) {
+        revenueVsDifferenceChartInstance.destroy();
       }
-
-      filteredMerchants = [...merchants];
-      renderMerchants();
-      calculateSummary();
-      renderCharts();
-      renderPayoutsTable();
-      document.getElementById('merchantId').value = '';
-      document.getElementById('merchantName').value = '';
-      document.getElementById('merchantArea').value = '';
-      document.getElementById('orderCountInput').value = '';
-      document.getElementById('revenueInput').value = '';
-      document.getElementById('refundsInput').value = '';
-      document.getElementById('payoutsInput').value = '';
-      document.getElementById('errorMessage').textContent = '';
-    }
-
-    function deleteMerchant(merchantId) {
-      merchants = merchants.filter(m => m.MERCHANT_ID !== merchantId);
-      filteredMerchants = [...merchants];
-      renderMerchants();
-      calculateSummary();
-      renderCharts();
-      renderPayoutsTable();
-    }
-
-    function resetData() {
-      orders = [];
-      payouts = [...predefinedPayouts];
-      refunds = [];
-      merchants = [...predefinedMerchants];
-      filteredOrders = [];
-      filteredPayouts = [...payouts];
-      filteredRefunds = [];
-      filteredMerchants = [...merchants];
-      document.getElementById('ordersFile').value = '';
-      document.getElementById('payoutsFile').value = '';
-      document.getElementById('refundsFile').value = '';
-      document.getElementById('merchantId').value = '';
-      document.getElementById('merchantName').value = '';
-      document.getElementById('merchantArea').value = '';
-      document.getElementById('orderCountInput').value = '';
-      document.getElementById('revenueInput').value = '';
-      document.getElementById('refundsInput').value = '';
-      document.getElementById('payoutsInput').value = '';
-      document.getElementById('errorMessage').textContent = 'تم مسح جميع البيانات بنجاح.';
-      renderAll();
-    }
-
-    function updateMerchants() {
-      const merchantMap = new Map();
-
-      // Initialize with predefined merchants
-      predefinedMerchants.forEach(row => {
-        merchantMap.set(row.MERCHANT_ID, {
-          MERCHANT_ID: row.MERCHANT_ID,
-          MERCHANT_NAME: row.MERCHANT_NAME,
-          MERCHANT_AREA: row.MERCHANT_AREA,
-          orderCount: row.orderCount || 0,
-          revenue: row.revenue || 0,
-          refunds: row.refunds || 0,
-          payouts: row.payouts || 0
-        });
-      });
-
-      // Update with orders data (if available)
-      orders.forEach(row => {
-        if (row.MERCHANT_ID) {
-          if (!merchantMap.has(row.MERCHANT_ID)) {
-            merchantMap.set(row.MERCHANT_ID, {
-              MERCHANT_ID: row.MERCHANT_ID,
-              MERCHANT_NAME: row.MERCHANT_NAME || 'غير معروف',
-              MERCHANT_AREA: row.MERCHANT_AREA || 'غير محدد',
-              orderCount: 0,
-              revenue: 0,
-              refunds: 0,
-              payouts: 0
-            });
+      
+      const labels = careemData.dailyAnalysis.map(d => d.date);
+      const revenue = careemData.dailyAnalysis.map(d => d.revenue);
+      const difference = careemData.dailyAnalysis.map(d => d.difference);
+      
+      revenueVsDifferenceChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'الإيرادات',
+              data: revenue,
+              borderColor: '#27ae60',
+              backgroundColor: 'rgba(39, 174, 96, 0.1)',
+              tension: 0.3,
+              fill: true
+            },
+            {
+              label: 'الفرق',
+              data: difference,
+              borderColor: '#e74c3c',
+              backgroundColor: 'rgba(231, 76, 60, 0.1)',
+              tension:  ️0.3,
+              fill: true
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  let label = context.dataset.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  if (context.parsed.y !== null) {
+                    label += formatCurrency(context.parsed.y);
+                  }
+                  return label;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return formatCurrency(value, true);
+                }
+              }
+            }
           }
-          merchantMap.get(row.MERCHANT_ID).orderCount += 1;
-          merchantMap.get(row.MERCHANT_ID).revenue += Number(row.FOOD_GROSS_BASKET_AMOUNT) || 0;
         }
       });
-
-      // Update with refunds data
-      refunds.forEach(row => {
-        if (row.MERCHANT_ID) {
-          if (!merchantMap.has(row.MERCHANT_ID)) {
-            merchantMap.set(row.MERCHANT_ID, {
-              MERCHANT_ID: row.MERCHANT_ID,
-              MERCHANT_NAME: row.MERCHANT_NAME || 'غير معروف',
-              MERCHANT_AREA: row.MERCHANT_AREA || 'غير محدد',
-              orderCount: 0,
-              revenue: 0,
-              refunds: 0,
-              payouts: 0
-            });
-          }
-          merchantMap.get(row.MERCHANT_ID).refunds += Number(row.TOTAL_AMOUNT) || 0;
-        }
-      });
-
-      // Update with payouts data
-      payouts.forEach(row => {
-        const merchantId = row['Billable ID'];
-        if (merchantId) {
-          if (!merchantMap.has(merchantId)) {
-            merchantMap.set(merchantId, {
-              MERCHANT_ID: merchantId,
-              MERCHANT_NAME: 'غير معروف',
-              MERCHANT_AREA: 'غير محدد',
-              orderCount: 0,
-              revenue: 0,
-              refunds: 0,
-              payouts: 0
-            });
-          }
-          merchantMap.get(merchantId).payouts += Number(row['Net Payout Amount']) || 0;
-        }
-      });
-
-      merchants = Array.from(merchantMap.values());
-      filteredMerchants = [...merchants];
-      renderMerchants();
-      renderPayoutsTable();
     }
-
-    function renderAll() {
-      renderMerchants();
-      calculateSummary();
-      renderCharts();
-      renderPayoutsTable();
-    }
-
-    function applyDateFilter() {
-      const start = document.getElementById('startDate').value;
-      const end = document.getElementById('endDate').value;
-      if (start && end && new Date(start) > new Date(end)) {
-        document.getElementById('errorMessage').textContent = 'تاريخ البداية يجب أن يكون قبل تاريخ النهاية.';
-        return;
+    
+    // Render deductions distribution chart
+    function renderDeductionsDistributionChart() {
+      const ctx = document.getElementById('deductionsDistributionChart').getContext('2d');
+      
+      if (deductionsDistributionChartInstance) {
+        deductionsDistributionChartInstance.destroy();
       }
-      filteredOrders = orders.filter(row => {
-        const d = new Date(row.TRANSACTION_DATE);
-        return (!start || d >= new Date(start)) && (!end || d <= new Date(end));
+      
+      const totalCommission = careemData.orders.reduce((sum, order) => sum + order.commission, 0);
+      const totalDiscounts = careemData.orders.reduce((sum, order) => sum + order.discount, 0);
+      const totalClawbacks = careemData.adjustments.reduce((sum, adj) => sum + Math.abs(adj.amount), 0);
+      
+      deductionsDistributionChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['العمولة', 'الخصومات', 'التعويضات'],
+          datasets: [{
+            data: [totalCommission, totalDiscounts, totalClawbacks],
+            backgroundColor: ['#3498db', '#e74c3c', '#9b59b6']
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'bottom',
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  let label = context.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  if (context.parsed !== null) {
+                    const value = context.parsed;
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    const percentage = Math.round((value / total) * 100);
+                    label += formatCurrency(value);
+                    label += ` (${percentage}%)`;
+                  }
+                  return label;
+                }
+              }
+            }
+          }
+        }
       });
-      filteredPayouts = payouts.filter(row => {
-        const d = new Date(row['Start Date']);
-        return (!start || d >= new Date(start)) && (!end || d <= new Date(end));
-      });
-      filteredRefunds = refunds.filter(row => {
-        const d = new Date(row.TRANSACTION_DATE);
-        return (!start || d >= new Date(start)) && (!end || d <= new Date(end));
-      });
-      filteredMerchants = merchants.filter(m => {
-        const hasOrders = filteredOrders.some(o => o.MERCHANT_ID === m.MERCHANT_ID);
-        const hasPayouts = filteredPayouts.some(p => p['Billable ID'] === m.MERCHANT_ID);
-        const hasRefunds = filteredRefunds.some(r => r.MERCHANT_ID === m.MERCHANT_ID);
-        return hasOrders || hasPayouts || hasRefunds || (m.orderCount > 0 || m.revenue > 0 || m.refunds !== 0 || m.payouts !== 0);
-      });
-      renderAll();
     }
-
+    
+    // Render reasons chart
+    function renderReasonsChart() {
+      const ctx = document.getElementById('reasonsChart').getContext('2d');
+      
+      if (reasonsChartInstance) {
+        reasonsChartInstance.destroy();
+      }
+      
+      const labels = careemData.reasonsAnalysis.map(r => r.reason);
+      const data = careemData.reasonsAnalysis.map(r => r.totalAmount);
+      
+      reasonsChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'المبلغ',
+            data: data,
+            backgroundColor: careemData.reasonsAnalysis.map(r => 
+              r.type === 'clawback' ? '#e74c3c' : '#f39c12'
+            )
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const reason = careemData.reasonsAnalysis[context.dataIndex];
+                  return [
+                    `المبلغ: ${formatCurrency(context.parsed.y)}`,
+                    `العدد: ${reason.count}`,
+                    `المتوسط: ${formatCurrency(reason.averageAmount)}`
+                  ];
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return formatCurrency(value, true);
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    // Render period comparison chart
+    function renderPeriodComparisonChart() {
+      const ctx = document.getElementById('periodComparisonChart').getContext('2d');
+      
+      if (periodComparisonChartInstance) {
+        periodComparisonChartInstance.destroy();
+      }
+      
+      // Sample data for comparison
+      periodComparisonChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['الأسبوع الحالي', 'الأسبوع السابق', 'متوسط الشهر'],
+          datasets: [
+            {
+              label: 'الإيرادات',
+              data: [1200, 1100, 1150],
+              backgroundColor: '#27ae60'
+            },
+            {
+              label: 'الخصومات',
+              data: [300, 250, 275],
+              backgroundColor: '#e74c3c'
+            },
+            {
+              label: 'التعويضات',
+              data: [150, 120, 135],
+              backgroundColor: '#9b59b6'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  let label = context.dataset.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  if (context.parsed.y !== null) {
+                    label += formatCurrency(context.parsed.y);
+                  }
+                  return label;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return formatCurrency(value, true);
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    // Update alerts
+    function updateAlerts() {
+      const totalRevenue = careemData.orders.reduce((sum, order) => sum + order.amount, 0);
+      const totalDiscounts = careemData.orders.reduce((sum, order) => sum + order.discount, 0);
+      const discountRate = totalRevenue > 0 ? (totalDiscounts / totalRevenue * 100) : 0;
+      
+      const highClawbacks = careemData.adjustments.filter(adj => Math.abs(adj.amount) > 10);
+      
+      let alertsHTML = '';
+      
+      if (discountRate > systemSettings.maxDiscountRate) {
+        alertsHTML += `
+          <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>تنبيه:</strong> نسبة الخصومات الحالية (${discountRate.toFixed(1)}%) تقترب من الحد الأقصى المسموح (${systemSettings.maxDiscountRate}%)
+          </div>
+        `;
+      }
+      
+      if (highClawbacks.length > 0) {
+        alertsHTML += `
+          <div class="alert alert-danger">
+            <i class="fas fa-exclamation-circle"></i>
+            <strong>خطر:</strong> هناك ${highClawbacks.length} أوامر بتعويضات عالية تتطلب مراجعة فورية
+          </div>
+        `;
+      }
+      
+      alertsHTML += `
+        <div class="alert alert-info">
+          <i class="fas fa-lightbulb"></i>
+          <strong>توصية:</strong>可以考虑协商降低佣金比例或优化促销策略以减少差异
+        </div>
+      `;
+      
+      document.getElementById('alertsContainer').innerHTML = alertsHTML;
+    }
+    
+    // Save settings
+    function saveSettings() {
+      systemSettings.commissionRate = parseFloat(document.getElementById('commissionRate').value) || 25;
+      systemSettings.deliveryFee = parseFloat(document.getElementById('deliveryFee').value) || 7;
+      systemSettings.vatRate = parseFloat(document.getElementById('vatRate').value) || 5;
+      systemSettings.penaltyRate = parseFloat(document.getElementById('penaltyRate').value) || 10;
+      systemSettings.maxDiscountRate = parseFloat(document.getElementById('maxDiscountRate').value) || 20;
+      
+      updateAlerts();
+      showNotification('تم حفظ الإعدادات بنجاح', 'success');
+    }
+    
+    // Tab functionality
+    function openTab(evt, tabName) {
+      const tabContents = document.getElementsByClassName('tab-content');
+      for (let i = 0; i < tabContents.length; i++) {
+        tabContents[i].classList.remove('active');
+      }
+      
+      const tabs = document.getElementsByClassName('tab');
+      for (let i = 0; i < tabs.length; i++) {
+        tabs[i].classList.remove('active');
+      }
+      
+      document.getElementById(tabName).classList.add('active');
+      evt.currentTarget.classList.add('active');
+    }
+    
+    // Filter table
     function filterTable(tableId, query) {
       const rows = document.querySelectorAll(`#${tableId} tbody tr`);
       rows.forEach(r => {
         r.style.display = r.textContent.toLowerCase().includes(query.toLowerCase()) ? '' : 'none';
       });
     }
-
-    function renderMerchants() {
-      const tbody = document.querySelector('#merchantsTable tbody');
-      tbody.innerHTML = ''; // Clear table to prevent duplicates
-      filteredMerchants.forEach(row => {
-        const discount = row.revenue * DISCOUNT_RATE;
-        const commission = row.revenue * COMMISSION_RATE;
-        const netProfit = row.revenue - discount - commission - Math.abs(row.refunds);
-        const refundRatio = row.revenue ? (Math.abs(row.refunds) / row.revenue * 100).toFixed(2) : 0;
-        const isHighRefund = refundRatio > 5;
-        const isNegativePayout = row.payouts < 0;
-        const tr = document.createElement('tr');
-        tr.className = isHighRefund || isNegativePayout ? 'highlight' : '';
-        tr.innerHTML = `
-          <td>${row.MERCHANT_ID || ''}</td>
-          <td>${row.MERCHANT_NAME || ''}</td>
-          <td>${row.MERCHANT_AREA || ''}</td>
-          <td>${row.orderCount || 0}</td>
-          <td>${Number(row.revenue || 0).toFixed(2)}</td>
-          <td>${Number(row.refunds || 0).toFixed(2)}</td>
-          <td>${refundRatio}%</td>
-          <td>${Number(row.payouts || 0).toFixed(2)}</td>
-          <td>${netProfit.toFixed(2)}</td>
-          <td><button class="delete-btn" onclick="deleteMerchant('${row.MERCHANT_ID}')">حذف</button></td>`;
-        tbody.appendChild(tr);
-      });
-      // Display alerts for high refunds or negative payouts
-      const alerts = [];
-      filteredMerchants.forEach(m => {
-        const refundRatio = m.revenue ? (Math.abs(m.refunds) / m.revenue * 100).toFixed(2) : 0;
-        if (refundRatio > 5) {
-          alerts.push(`الفرع ${m.MERCHANT_AREA} (${m.MERCHANT_ID}): نسبة تعويضات عالية (${refundRatio}%)`);
-        }
-        if (m.payouts < 0) {
-          alerts.push(`الفرع ${m.MERCHANT_AREA} (${m.MERCHANT_ID}): دفعة صافية سلبية (${m.payouts.toFixed(2)} درهم)`);
-        }
-      });
-      const totalPayouts = parseFloat(document.getElementById('totalPayouts').textContent) || 0;
-      if (totalPayouts < 0) {
-        alerts.push(`إجمالي الدفعات سلبي (${totalPayouts.toFixed(2)} درهم)`);
+    
+    // Format currency
+    function formatCurrency(amount, short = false) {
+      if (short) {
+        return amount.toLocaleString('ar-AE') + ' AED';
       }
-      document.getElementById('alerts').innerHTML = alerts.length > 0 ? `<ul>${alerts.map(a => `<li>${a}</li>`).join('')}</ul>` : 'لا توجد تنبيهات.';
+      return amount.toLocaleString('ar-AE', { style: 'currency', currency: 'AED' });
     }
-
-    function renderPayoutsTable() {
-      const tbody = document.querySelector('#payoutsTable tbody');
-      tbody.innerHTML = ''; // Clear table to prevent duplicates
-      filteredPayouts.forEach(row => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${row['Billable ID'] || ''}</td>
-          <td>${Number(row['Net Payout Amount'] || 0).toFixed(2)}</td>
-          <td>${row['Start Date'] || ''}</td>
-          <td>${row['End Date'] || ''}</td>`;
-        tbody.appendChild(tr);
-      });
-    }
-
-    function calculateSummary() {
-      let totalSales = 0, totalDiscount = 0, totalCommission = 0, totalRefund = 0, totalPayouts = 0, totalOrders = 0;
-
-      filteredOrders.forEach(row => {
-        totalSales += Number(row.FOOD_GROSS_BASKET_AMOUNT) || 0;
-        totalDiscount += Math.abs(Number(row.PARTNER_FUNDED_PROMO_DISCOUNT) || 0);
-        totalCommission += Math.abs(Number(row.BILLING_PLATFORM_FEE) || 0) +
-                           Math.abs(Number(row.BILLING_PLATFORM_FEE_TAX) || 0) +
-                           Math.abs(Number(row.BILLING_PAYMENT_GATEWAY_FEE) || 0) +
-                           Math.abs(Number(row.BILLING_PAYMENT_GATEWAY_FEE_TAX) || 0);
-        totalOrders += 1;
-      });
-
-      filteredPayouts.forEach(row => totalPayouts += Number(row['Net Payout Amount']) || 0);
-      filteredRefunds.forEach(row => totalRefund += Math.abs(Number(row.TOTAL_AMOUNT) || 0));
-
-      // Use merchant data if no orders file is uploaded
-      if (filteredOrders.length === 0) {
-        totalOrders = filteredMerchants.reduce((sum, m) => sum + (m.orderCount || 0), 0);
-        totalSales = filteredMerchants.reduce((sum, m) => sum + (m.revenue || 0), 0);
-        totalDiscount = totalSales * DISCOUNT_RATE;
-        totalCommission = totalSales * COMMISSION_RATE;
-        totalRefund = filteredMerchants.reduce((sum, m) => sum + Math.abs(m.refunds || 0), 0);
-        totalPayouts = filteredMerchants.reduce((sum, m) => sum + (m.payouts || 0), 0);
-      }
-
-      const netProfit = totalSales - totalDiscount - totalCommission - totalRefund;
-      const netProfitRate = totalSales ? ((netProfit / totalSales) * 100).toFixed(2) : 0;
-
-      document.getElementById('orderCount').textContent = totalOrders;
-      document.getElementById('totalSales').textContent = totalSales.toFixed(2);
-      document.getElementById('totalDiscount').textContent = totalDiscount.toFixed(2);
-      document.getElementById('totalCommission').textContent = totalCommission.toFixed(2);
-      document.getElementById('totalRefund').textContent = totalRefund.toFixed(2);
-      document.getElementById('totalPayouts').textContent = totalPayouts.toFixed(2);
-      document.getElementById('netProfit').textContent = netProfit.toFixed(2);
-      document.getElementById('netProfitRate').textContent = netProfitRate;
-
-      // Conditional styling for totalPayouts
-      const payoutsCard = document.getElementById('payoutsCard');
-      payoutsCard.classList.remove('negative', 'positive');
-      if (totalPayouts < 0) {
-        payoutsCard.classList.add('negative');
-      } else {
-        payoutsCard.classList.add('positive');
-      }
-    }
-
-    function renderCharts() {
-      // Summary Chart
-      const summaryCtx = document.getElementById('summaryChart').getContext('2d');
-      if (summaryChartInstance) {
-        summaryChartInstance.destroy();
-      }
-      summaryChartInstance = new Chart(summaryCtx, {
-        type: 'bar',
-        data: {
-          labels: ['الإيرادات', 'الخصومات', 'العمولات', 'التعويضات', 'الدفعات', 'صافي الربح'],
-          datasets: [{
-            label: 'AED',
-            data: [
-              parseFloat(document.getElementById('totalSales').textContent) || 0,
-              parseFloat(document.getElementById('totalDiscount').textContent) || 0,
-              parseFloat(document.getElementById('totalCommission').textContent) || 0,
-              parseFloat(document.getElementById('totalRefund').textContent) || 0,
-              parseFloat(document.getElementById('totalPayouts').textContent) || 0,
-              parseFloat(document.getElementById('netProfit').textContent) || 0
-            ],
-            backgroundColor: ['#27ae60', '#e67e22', '#c0392b', '#8e44ad', '#16a085', '#2980b9']
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true } }
-        }
-      });
-
-      // Branches Comparison Chart
-      const branchesCtx = document.getElementById('branchesChart').getContext('2d');
-      if (branchesChartInstance) {
-        branchesChartInstance.destroy();
-      }
-      branchesChartInstance = new Chart(branchesCtx, {
-        type: 'bar',
-        data: {
-          labels: filteredMerchants.map(m => m.MERCHANT_AREA || m.MERCHANT_ID),
-          datasets: [
-            {
-              label: 'الإيرادات (درهم)',
-              data: filteredMerchants.map(m => m.revenue || 0),
-              backgroundColor: '#27ae60'
-            },
-            {
-              label: 'صافي الربح (درهم)',
-              data: filteredMerchants.map(m => {
-                const discount = (m.revenue || 0) * DISCOUNT_RATE;
-                const commission = (m.revenue || 0) * COMMISSION_RATE;
-                return (m.revenue || 0) - discount - commission - Math.abs(m.refunds || 0);
-              }),
-              backgroundColor: '#2980b9'
-            },
-            {
-              label: 'الدفعات الصافية (درهم)',
-              data: filteredMerchants.map(m => m.payouts || 0),
-              backgroundColor: '#16a085'
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { position: 'top' } },
-          scales: { y: { beginAtZero: true } }
-        }
-      });
-    }
-
+    
+    // Export to Excel
     function exportExcel() {
       const wb = XLSX.utils.book_new();
-      const ws1 = XLSX.utils.json_to_sheet(filteredMerchants.map(m => {
-        const discount = (m.revenue || 0) * DISCOUNT_RATE;
-        const commission = (m.revenue || 0) * COMMISSION_RATE;
-        const netProfit = (m.revenue || 0) - discount - commission - Math.abs(m.refunds || 0);
-        return {
-          MERCHANT_ID: m.MERCHANT_ID,
-          MERCHANT_NAME: m.MERCHANT_NAME,
-          MERCHANT_AREA: m.MERCHANT_AREA,
-          'عدد الأوامر': m.orderCount,
-          'الإيرادات (درهم)': m.revenue,
-          'التعويضات (درهم)': m.refunds,
-          'نسبة التعويضات': m.revenue ? (Math.abs(m.refunds) / m.revenue * 100).toFixed(2) + '%' : '0%',
-          'الدفعات الصافية (درهم)': m.payouts,
-          'صافي الربح (درهم)': netProfit.toFixed(2)
-        };
+      
+      // Daily analysis sheet
+      const dailyDataSheet = careemData.dailyAnalysis.map(day => ({
+        'التاريخ': day.date,
+        'عدد الأوامر': day.orderCount,
+        'الإيرادات': day.revenue,
+        'العمولة': day.commission,
+        'الخصومات': day.discounts,
+        'التعويضات': day.clawbacks,
+        'الدفعة': day.payout,
+        'الفرق': day.difference,
+        'نسبة الفرق': day.differenceRate + '%'
       }));
-      const ws2 = XLSX.utils.json_to_sheet(filteredPayouts.map(p => ({
-        'Billable ID': p['Billable ID'],
-        'الدفعة الصافية (درهم)': Number(p['Net Payout Amount'] || 0).toFixed(2),
-        'تاريخ البداية': p['Start Date'],
-        'تاريخ النهاية': p['End Date']
-      })));
-      const today = new Date().toISOString().split('T')[0];
-      XLSX.utils.book_append_sheet(wb, ws1, 'تقرير الفروع');
-      XLSX.utils.book_append_sheet(wb, ws2, 'تفاصيل الدفعات');
-      XLSX.writeFile(wb, `restaurant_revenue_report_${today}.xlsx`);
+      
+      const wsDaily = XLSX.utils.json_to_sheet(dailyDataSheet);
+      
+      // Weekly analysis sheet
+      const weeklyDataSheet = careemData.weeklyAnalysis.map(week => ({
+        'الأسبوع': week.week,
+        'عدد الأوامر': week.orderCount,
+        'الإيرادات': week.revenue,
+        'العمولة': week.commission,
+        'الخصومات': week.discounts,
+        'التعويضات': week.clawbacks,
+        'الدفعة': week.payout,
+        'الفرق': week.difference,
+        'نسبة الفرق': week.differenceRate + '%'
+      }));
+      
+      const wsWeekly = XLSX.utils.json_to_sheet(weeklyDataSheet);
+      
+      // Reasons analysis sheet
+      const reasonsDataSheet = careemData.reasonsAnalysis.map(reason => ({
+        'سبب الفرق': reason.reason,
+        'العدد': reason.count,
+        'إجمالي المبلغ': reason.totalAmount,
+        'نسبة من الإيرادات': reason.revenuePercentage + '%',
+        'متوسط المبلغ': reason.averageAmount,
+        'الحالة': reason.status
+      }));
+      
+      const wsReasons = XLSX.utils.json_to_sheet(reasonsDataSheet);
+      
+      XLSX.utils.book_append_sheet(wb, wsDaily, 'التحليل اليومي');
+      XLSX.utils.book_append_sheet(wb, wsWeekly, 'التحليل الأسبوعي');
+      XLSX.utils.book_append_sheet(wb, wsReasons, 'أسباب الفروقات');
+      
+      XLSX.writeFile(wb, 'تقرير_كريم_فود.xlsx');
+      showNotification('تم تصدير ملف Excel بنجاح', 'success');
     }
-
+    
+    // Export to PDF
     function exportPDF() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
-      doc.setFontSize(14);
-      const today = new Date().toISOString().split('T')[0];
-      doc.text(`تقرير إيرادات المطعم (${today})`, 10, 15);
+      
+      // Add Arabic font support
+      doc.addFont('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf', 'Roboto', 'normal');
+      doc.setFont('Roboto');
+      
+      doc.setFontSize(18);
+      doc.text("تقرير تحليل كريم فود", 105, 15, { align: 'center' });
+      
       doc.setFontSize(12);
-      doc.text(`عدد الأوامر: ${document.getElementById('orderCount').textContent}`, 10, 30);
-      doc.text(`إجمالي الإيرادات: ${document.getElementById('totalSales').textContent} AED`, 10, 40);
-      doc.text(`إجمالي الخصومات: ${document.getElementById('totalDiscount').textContent} AED`, 10, 50);
-      doc.text(`إجمالي العمولات: ${document.getElementById('totalCommission').textContent} AED`, 10, 60);
-      doc.text(`إجمالي التعويضات: ${document.getElementById('totalRefund').textContent} AED`, 10, 70);
-      doc.text(`إجمالي الدفعات: ${document.getElementById('totalPayouts').textContent} AED`, 10, 80);
-      doc.text(`💰 صافي الربح: ${document.getElementById('netProfit').textContent} AED`, 10, 90);
-      doc.text(`📈 نسبة صافي الربح: ${document.getElementById('netProfitRate').textContent}%`, 10, 100);
-      doc.text('تنبيهات:', 10, 110);
-      const alertsText = document.getElementById('alerts').textContent;
-      doc.text(alertsText, 10, 120, { maxWidth: 190 });
-
-      // Add branches table
-      doc.addPage();
+      doc.text("الفترة: 1-7 سبتمبر 2025", 20, 30);
+      
+      // Summary
       doc.setFontSize(14);
-      doc.text('تقرير الفروع', 10, 15);
-      let y = 25;
-      doc.setFontSize(10);
-      const branchHeaders = ['MERCHANT_ID', 'اسم الفرع', 'المنطقة', 'عدد الأوامر', 'الإيرادات', 'التعويضات', 'نسبة التعويضات', 'الدفعات', 'صافي الربح'];
-      branchHeaders.forEach((header, i) => {
-        doc.text(header, 10 + i * 22, y);
+      doc.text("ملخص الأداء", 20, 45);
+      
+      doc.setFontSize(12);
+      const totalRevenue = careemData.orders.reduce((sum, order) => sum + order.amount, 0);
+      const totalCommission = careemData.orders.reduce((sum, order) => sum + order.commission, 0);
+      const totalDiscounts = careemData.orders.reduce((sum, order) => sum + order.discount, 0);
+      const totalClawbacks = careemData.adjustments.reduce((sum, adj) => sum + Math.abs(adj.amount), 0);
+      
+      doc.text("إجمالي الإيرادات: " + formatCurrency(totalRevenue), 20, 55);
+      doc.text("إجمالي العمولة: " + formatCurrency(totalCommission), 20, 65);
+      doc.text("إجمالي الخصومات: " + formatCurrency(totalDiscounts), 20, 75);
+      doc.text("إجمالي التعويضات: " + formatCurrency(totalClawbacks), 20, 85);
+      
+      // Add charts as images
+      const charts = [
+        { canvas: 'revenueVsDifferenceChart', y: 95 },
+        { canvas: 'deductionsDistributionChart', y: 170 },
+        { canvas: 'reasonsChart', y: 245 }
+      ];
+      
+      charts.forEach(chart => {
+        const chartCanvas = document.getElementById(chart.canvas);
+        const chartImage = chartCanvas.toDataURL('image/png');
+        doc.addImage(chartImage, 'PNG', 15, chart.y, 180, 70);
       });
-      y += 10;
-      filteredMerchants.forEach(m => {
-        const discount = (m.revenue || 0) * DISCOUNT_RATE;
-        const commission = (m.revenue || 0) * COMMISSION_RATE;
-        const netProfit = (m.revenue || 0) - discount - commission - Math.abs(m.refunds || 0);
-        const row = [
-          m.MERCHANT_ID || '',
-          m.MERCHANT_NAME || '',
-          m.MERCHANT_AREA || '',
-          m.orderCount || 0,
-          Number(m.revenue || 0).toFixed(2),
-          Number(m.refunds || 0).toFixed(2),
-          m.revenue ? (Math.abs(m.refunds) / m.revenue * 100).toFixed(2) + '%' : '0%',
-          Number(m.payouts || 0).toFixed(2),
-          netProfit.toFixed(2)
-        ];
-        row.forEach((cell, i) => {
-          doc.text(cell.toString(), 10 + i * 22, y);
-        });
-        y += 10;
-        if (y > 280) {
-          doc.addPage();
-          y = 25;
+      
+      doc.save('تقرير_كريم_فود.pdf');
+      showNotification('تم تصدير ملف PDF بنجاح', 'success');
+    }
+    
+    // Export charts
+    function exportCharts() {
+      // Create a new canvas to combine all charts
+      const combinedCanvas = document.createElement('canvas');
+      const ctx = combinedCanvas.getContext('2d');
+      combinedCanvas.width = 1200;
+      combinedCanvas.height = 1600;
+      
+      // Fill background
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, combinedCanvas.width, combinedCanvas.height);
+      
+      // Add title
+      ctx.fillStyle = '#2c3e50';
+      ctx.font = 'bold 28px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('تقرير الرسوم البيانية - تحليل كريم فود', combinedCanvas.width / 2, 40);
+      
+      // Add date
+      ctx.fillStyle = '#7f8c8d';
+      ctx.font = '16px Arial';
+      ctx.fillText('تاريخ التقرير: ' + new Date().toLocaleDateString('ar-AE'), combinedCanvas.width / 2, 70);
+      
+      // Get chart canvases
+      const charts = [
+        { canvas: 'revenueVsDifferenceChart', y: 100, title: 'تطور الإيرادات والفروقات' },
+        { canvas: 'deductionsDistributionChart', y: 450, title: 'توزيع الخصومات والتعويضات' },
+        { canvas: 'reasonsChart', y: 800, title: 'أسباب الفروقات' },
+        { canvas: 'periodComparisonChart', y: 1150, title: 'مقارنة الفترات' }
+      ];
+      
+      charts.forEach(chart => {
+        // Add chart title
+        ctx.fillStyle = '#2c3e50';
+        ctx.font = 'bold 20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(chart.title, combinedCanvas.width / 2, chart.y - 20);
+        
+        // Draw chart
+        const chartCanvas = document.getElementById(chart.canvas);
+        ctx.drawImage(chartCanvas, 100, chart.y, 1000, 300);
+      });
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.download = 'تقرير_الرسوم_البيانية_كريم_فود.png';
+      link.href = combinedCanvas.toDataURL('image/png');
+      link.click();
+      
+      showNotification('تم تصدير الرسوم البيانية بنجاح', 'success');
+    }
+    
+    // Show notification
+    function showNotification(message, type) {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      notification.className = 'notification ' + type;
+      notification.classList.add('show');
+      
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 3000);
+    }
+    
+    // File upload handlers
+    document.getElementById('careemFile').addEventListener('change', function(e) {
+      handleFileUpload(e, 'careem');
+    });
+    
+    document.getElementById('payoutsFile').addEventListener('change', function(e) {
+      handleFileUpload(e, 'payouts');
+    });
+    
+    document.getElementById('adjustmentsFile').addEventListener('change', function(e) {
+      handleFileUpload(e, 'adjustments');
+    });
+    
+    // Handle file upload
+    function handleFileUpload(e, type) {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        try {
+          let data;
+          if (file.name.endsWith('.csv')) {
+            data = Papa.parse(event.target.result, {
+              header: true,
+              skipEmptyLines: true
+            }).data;
+          } else {
+            const workbook = XLSX.read(event.target.result, { type: 'array' });
+            data = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+          }
+          
+          // Process the uploaded data
+          processUploadedData(data, type);
+          showNotification('تم تحميل بيانات ' + getTypeText(type) + ' بنجاح', 'success');
+        } catch (error) {
+          showNotification('خطأ في قراءة الملف: ' + error.message, 'error');
         }
-      });
-
-      // Add payouts table
-      doc.addPage();
-      doc.setFontSize(14);
-      doc.text('تفاصيل الدفعات', 10, 15);
-      y = 25;
-      doc.setFontSize(10);
-      const payoutHeaders = ['Billable ID', 'الدفعة الصافية', 'تاريخ البداية', 'تاريخ النهاية'];
-      payoutHeaders.forEach((header, i) => {
-        doc.text(header, 10 + i * 50, y);
-      });
-      y += 10;
-      filteredPayouts.forEach(p => {
-        const row = [
-          p['Billable ID'] || '',
-          Number(p['Net Payout Amount'] || 0).toFixed(2),
-          p['Start Date'] || '',
-          p['End Date'] || ''
-        ];
-        row.forEach((cell, i) => {
-          doc.text(cell.toString(), 10 + i * 50, y);
-        });
-        y += 10;
-        if (y > 280) {
-          doc.addPage();
-          y = 25;
-        }
-      });
-
-      doc.save(`restaurant_revenue_report_${today}.pdf`);
+      };
+      reader.readAsArrayBuffer(file);
+    }
+    
+    // Get type text
+    function getTypeText(type) {
+      const types = {
+        'careem': 'أوامر كريم',
+        'payouts': 'الدفعات',
+        'adjustments': 'التعديلات'
+      };
+      return types[type] || type;
+    }
+    
+    // Process uploaded data
+    function processUploadedData(data, type) {
+      if (type === 'careem') {
+        careemData.orders = data.map(row => ({
+          id: row['Order ID'] || row['رقم الطلب'] || '',
+          date: row['Date'] || row['التاريخ'] || '',
+          customer: row['Customer'] || row['العميل'] || '',
+          amount: parseFloat(row['Amount'] || row['المبلغ'] || 0),
+          discount: parseFloat(row['Discount'] || row['الخصم'] || 0),
+          commission: parseFloat(row['Commission'] || row['العمولة'] || 0),
+          status: row['Status'] || row['الحالة'] || 'completed'
+        }));
+      } else if (type === 'payouts') {
+        careemData.payouts = data.map(row => ({
+          id: row['Payout ID'] || row['معرف الدفعة'] || '',
+          date: row['Date'] || row['التاريخ'] || '',
+          amount: parseFloat(row['Amount'] || row['المبلغ'] || 0),
+          period: row['Period'] || row['الفترة'] || '',
+          status: row['Status'] || row['الحالة'] || 'completed'
+        }));
+      } else if (type === 'adjustments') {
+        careemData.adjustments = data.map(row => ({
+          id: row['Adjustment ID'] || row['معرف التعديل'] || '',
+          date: row['Date'] || row['التاريخ'] || '',
+          orderID: row['Order ID'] || row['رقم الطلب'] || '',
+          amount: parseFloat(row['Amount'] || row['المبلغ'] || 0),
+          reason: row['Reason'] || row['السبب'] || 'other',
+          description: row['Description'] || row['الوصف'] || '',
+          type: row['Type'] || row['النوع'] || 'clawback'
+        }));
+      }
+      
+      // Re-process data for analysis
+      processDataForAnalysis();
+      
+      // Update displays
+      updateDashboard();
+      renderTables();
+      renderCharts();
+      updateAlerts();
     }
   </script>
 </body>
