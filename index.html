@@ -1,184 +1,947 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Crispy Chicken – Executive Dashboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Crispy Chicken — Delivery Sales Dashboard (Jan–Sep 2025)</title>
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js and plugins -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+  <!-- DataTables -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <!-- Export libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- Dark mode support -->
+  <script>
+    tailwind.config = { darkMode: 'class' }
+  </script>
   <style>
-    body { background: #fafafa; font-family: 'Arial', sans-serif; }
-    .kpi-card { background: white; border-radius: 1rem; padding: 1rem; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-    .branch-card { background: #fff8f5; border-radius: 1rem; padding: 1rem; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
-    .notes-panel textarea { width: 100%; min-height: 60px; border: 1px solid #ddd; border-radius: 0.5rem; padding: 0.5rem; font-size: 0.9rem; }
-    .btn { background: #e63946; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: bold; }
-    .btn:hover { background: #c92c3c; }
+    :root {
+      --brand-red: #d7263d;
+      --brand-gold: #f2b705;
+      --muted: #6b7280;
+      --card-bg: #ffffff;
+      --glass: rgba(255,255,255,0.6);
+    }
+    body { background: linear-gradient(180deg,#fbfbfc 0,#f1f5f9 100%); font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; color:#0b1220; }
+    .dark { background: linear-gradient(180deg,#1a202c 0,#2d3748 100%); color: #e2e8f0; }
+    .dark .card { background: #2d3748; }
+    .card { background: var(--card-bg); border-radius: 12px; box-shadow: 0 6px 20px rgba(11,17,32,0.06); }
+    .kpi { min-width: 12rem; }
+    .small { font-size: 0.85rem; color: var(--muted); }
+    .badge-up { color: #166534; background: rgba(16,185,129,0.08); padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+    .badge-down { color: #7f1d1d; background: rgba(239,68,68,0.08); padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+    .branch-card { transition: transform .18s ease, box-shadow .18s ease; cursor: pointer; }
+    .branch-card:hover { transform: translateY(-6px); box-shadow: 0 12px 30px rgba(11,17,32,0.12); }
+    .expandable .details { display: none; }
+    .expandable.expanded .details { display: block; }
+    .charts-grid { display: grid; grid-template-columns: repeat(1,1fr); gap: 1rem; }
+    @media (min-width: 900px) { .charts-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (min-width: 900px) { .kpi-row { display: flex; gap: 1rem; } }
+    table.dataTable { width: 100% !important; }
+    .top-controls { gap: 0.75rem; display: flex; align-items: center; flex-wrap: wrap; }
+    .spinner {
+      border: 3px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top: 3px solid var(--brand-red);
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .heatmap-cell { transition: all 0.2s ease; border: 1px solid rgba(0, 0, 0, 0.1); }
+    .dark .heatmap-cell { border: 1px solid rgba(255, 255, 255, 0.1); }
+    .notification {
+      position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 8px;
+      color: white; font-weight: 500; z-index: 1000; animation: slideIn 0.3s ease-out;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    .notification.success { background: #10b981; }
+    .notification.error { background: #ef4444; }
+    .notification.info { background: #3b82f6; }
+    .tooltip {
+      position: relative;
+    }
+    .tooltip .tooltiptext {
+      visibility: hidden; width: 200px; background-color: rgba(0, 0, 0, 0.8);
+      color: #fff; text-align: center; border-radius: 6px; padding: 5px;
+      position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -100px;
+      opacity: 0; transition: opacity 0.3s; font-size: 12px;
+    }
+    .tooltip:hover .tooltiptext {
+      visibility: visible; opacity: 1;
+    }
   </style>
 </head>
-<body>
-  <div id="dashboard" class="p-6 space-y-6">
-    <!-- Header -->
-    <div class="flex justify-between items-center">
-      <h1 class="text-2xl font-bold text-red-700">🍗 Crispy Chicken – Executive Dashboard</h1>
-      <div class="flex space-x-3">
-        <input id="dateRange" type="text" placeholder="Select date range" class="border rounded p-2" />
-        <button id="exportPDF" class="btn">📑 Export PDF</button>
+<body class="p-6">
+  <div class="max-w-7xl mx-auto">
+    <!-- HEADER -->
+    <header class="flex items-center justify-between mb-6">
+      <div class="flex items-center gap-4">
+        <img src="https://crispychicken-uae.com/logo.png" alt="Crispy Chicken" style="height:64px;width:auto; border-radius:8px;" />
+        <div>
+          <h1 class="text-2xl font-bold" style="color:var(--brand-red)">Crispy Chicken — Delivery Sales Dashboard</h1>
+          <div class="small">January – September 2025 &middot; Real time preview · For top management</div>
+        </div>
       </div>
-    </div>
-
-    <!-- KPI Cards -->
-    <div class="grid grid-cols-4 gap-4">
-      <div class="kpi-card"><h2 class="text-lg font-semibold">Total Sales</h2><p id="kpiSales" class="text-2xl font-bold text-red-600">-</p></div>
-      <div class="kpi-card"><h2 class="text-lg font-semibold">Total Orders</h2><p id="kpiOrders" class="text-2xl font-bold text-red-600">-</p></div>
-      <div class="kpi-card"><h2 class="text-lg font-semibold">Delivery %</h2><p id="kpiDelivery" class="text-2xl font-bold text-red-600">-</p></div>
-      <div class="kpi-card"><h2 class="text-lg font-semibold">Top Branch</h2><p id="kpiBranch" class="text-2xl font-bold text-red-600">-</p></div>
-    </div>
-
-    <!-- Branch Cards -->
-    <div id="branchCards" class="grid grid-cols-2 gap-4"></div>
-
-    <!-- Charts -->
-    <div class="grid grid-cols-2 gap-6">
-      <canvas id="barChart"></canvas>
-      <canvas id="lineChart"></canvas>
-      <canvas id="pieChart"></canvas>
-      <canvas id="heatmapChart"></canvas>
-    </div>
-
-    <!-- Raw Data Table -->
-    <div>
-      <h2 class="text-xl font-bold mb-2">Raw Data</h2>
-      <table id="dataTable" class="w-full border text-sm">
-        <thead class="bg-red-600 text-white">
-          <tr><th>Date</th><th>Branch</th><th>Sales</th><th>Orders</th><th>Delivery</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <button onclick="addSampleData()" class="btn mt-3">➕ Add Sample Data</button>
+      <div class="top-controls">
+        <div class="card px-3 py-2 flex items-center gap-3">
+          <label for="monthFilterTop" class="small">Date range</label>
+          <select id="monthFilterTop" class="p-2 border rounded text-sm" aria-label="Select month">
+            <option value="2025-01">January 2025</option>
+            <option value="2025-02">February 2025</option>
+            <option value="2025-03">March 2025</option>
+            <option value="2025-04">April 2025</option>
+            <option value="2025-05">May 2025</option>
+            <option value="2025-06">June 2025</option>
+            <option value="2025-07">July 2025</option>
+            <option value="2025-08">August 2025</option>
+            <option value="2025-09" selected>September 2025</option>
+            <option value="all">Jan–Sep 2025 (All)</option>
+          </select>
+        </div>
+        <button id="btnExportCSV" class="px-3 py-2 card text-sm font-semibold" title="Export CSV">Export CSV</button>
+        <button id="btnExportPDF" class="px-3 py-2 card text-sm font-semibold" title="Export PDF">Export PDF</button>
+        <button id="btnExportExcel" class="px-3 py-2 card text-sm font-semibold" title="Export Excel">Export Excel</button>
+        <button id="btnReset" class="px-3 py-2 card text-sm font-semibold" title="Reset data">Reset</button>
+        <button id="darkModeToggle" class="px-3 py-2 card text-sm font-semibold" title="Toggle dark mode">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd" />
+          </svg>
+        </button>
+      </div>
+    </header>
+    <!-- KPI CARDS -->
+    <section class="kpi-row mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="card kpi p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="small">Total Delivery Sales</div>
+            <div id="kpiSales" class="text-2xl font-bold" style="color:var(--brand-red)">— AED</div>
+            <div class="small mt-1">Period total</div>
+          </div>
+          <div class="text-right">
+            <div class="small">Growth</div>
+            <div id="kpiSalesDelta" class="small badge-up">+0.0%</div>
+          </div>
+        </div>
+      </div>
+      <div class="card kpi p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="small">Total Delivery Orders</div>
+            <div id="kpiOrders" class="text-2xl font-bold">—</div>
+            <div class="small mt-1">Period total</div>
+          </div>
+          <div class="text-right">
+            <div class="small">Avg Delivery Order Value</div>
+            <div id="kpiAOV" class="small">— AED</div>
+          </div>
+        </div>
+      </div>
+      <div class="card kpi p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="small">Delivery Orders Growth</div>
+            <div id="kpiOrdersGrowth" class="text-2xl font-bold">— %</div>
+            <div class="small mt-1">vs previous period</div>
+          </div>
+          <div class="text-right">
+            <div class="small">Peak Day Orders</div>
+            <div id="kpiPeakOrders" class="small">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="card kpi p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="small">Top Branch</div>
+            <div id="kpiTopBranch" class="text-2xl font-bold" style="color:var(--brand-gold)">—</div>
+            <div class="small mt-1">By delivery sales</div>
+          </div>
+          <div class="text-right">
+            <div class="small">Best Day</div>
+            <div id="kpiPeakDay" class="small">—</div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Branch Performance Cards -->
+    <section class="mb-6">
+      <h2 class="text-lg font-semibold mb-3" style="color:var(--brand-red)">Branch Delivery Performance</h2>
+      <div id="branchRow1" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4"></div>
+      <div id="branchRow2" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+    </section>
+    <!-- Chart Filters -->
+    <section class="mb-6">
+      <div class="card p-4">
+        <h3 class="font-semibold mb-3">Chart Filters</h3>
+        <div class="flex flex-wrap gap-4">
+          <div class="flex-1 min-w-[200px]">
+            <label class="block text-sm font-medium mb-1">Branches</label>
+            <select id="branchFilter" multiple class="w-full p-2 border rounded" size="3">
+              <option value="all" selected>All branches</option>
+              <option value="Barsha">Barsha</option>
+              <option value="Hamdan">Hamdan</option>
+              <option value="Khalidiyah">Khalidiyah</option>
+              <option value="Muroor">Muroor</option>
+              <option value="Satwa">Satwa</option>
+              <option value="Shabiya">Shabiya</option>
+            </select>
+          </div>
+          <div class="flex-1 min-w-[200px]">
+            <label class="block text-sm font-medium mb-1">Date Range</label>
+            <div class="flex gap-2">
+              <input type="date" id="startDate" class="flex-1 p-2 border rounded" placeholder="Start date">
+              <input type="date" id="endDate" class="flex-1 p-2 border rounded" placeholder="End date">
+            </div>
+          </div>
+          <div class="flex items-end">
+            <button id="applyFilters" class="px-4 py-2 bg-red-600 text-white rounded font-medium">Apply Filters</button>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Charts grid -->
+    <section class="mb-6">
+      <h2 class="text-lg font-semibold mb-3" style="color:var(--brand-red)">Delivery Sales Analysis</h2>
+      <div class="charts-grid">
+        <div class="card p-4">
+          <h3 class="font-semibold mb-2">Delivery Sales by Branch</h3>
+          <canvas id="barChart" height="220"></canvas>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-semibold mb-2">Daily Delivery Sales Trend</h3>
+          <canvas id="lineChart" height="220"></canvas>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-semibold mb-2">Delivery Sales Distribution</h3>
+          <canvas id="pieChart" height="220"></canvas>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-semibold mb-2">Delivery Sales Heatmap</h3>
+          <div id="heatmapContainer" style="height:220px; position:relative;"></div>
+        </div>
+      </div>
+    </section>
+    <!-- Data Input and Table -->
+    <section class="mb-6">
+      <div class="flex flex-col lg:flex-row gap-4">
+        <div class="card p-4 flex-1">
+          <h3 class="font-semibold mb-2">Quick Data Input</h3>
+          <textarea id="dataInput" class="w-full h-28 p-2 border rounded mb-2" placeholder="Paste CSV rows: Date,Outlet,DeliveryOrders,DeliverySales"></textarea>
+          <div class="flex gap-2">
+            <button id="btnUpdate" class="px-3 py-2 bg-red-600 text-white rounded">Update Data</button>
+            <button id="btnClearInput" class="px-3 py-2 border rounded">Clear</button>
+            <div class="small self-center ml-auto text-gray-500">Tip: Use YYYY-MM-DD dates</div>
+          </div>
+        </div>
+        <div class="card p-4 flex-1">
+          <h3 class="font-semibold mb-2">Raw Delivery Data (drill-down)</h3>
+          <table id="dataTable" class="display w-full">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Outlet</th>
+                <th>Delivery Orders</th>
+                <th>Delivery Sales (AED)</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+    <footer class="text-sm text-gray-500 mt-6">
+      Last updated: <span id="lastUpdated">—</span> &middot; Prepared for Top Management — Crispy Chicken
+    </footer>
+  </div>
+  <!-- Notification container -->
+  <div id="notificationContainer"></div>
+  <!-- Loading overlay -->
+  <div id="loadingOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white p-4 rounded-lg flex items-center">
+      <div class="spinner mr-3"></div>
+      <span>Processing...</span>
     </div>
   </div>
+  <script>
+    // Register Chart plugins
+    Chart.register(ChartDataLabels, window.ChartAnnotationPlugin || { id: 'annotation' });
 
-<script>
-  // --- Sample Dataset ---
-  let salesData = [
-    {date:"2025-09-01", branch:"Dubai", sales:1200, orders:100, delivery:60},
-    {date:"2025-09-02", branch:"Abu Dhabi", sales:800, orders:70, delivery:40},
-    {date:"2025-09-03", branch:"Sharjah", sales:600, orders:50, delivery:20}
-  ];
+    // Branch mapping
+    const branchMapping = {
+      'Barsha Shop': 'Barsha',
+      'Hamdan Shop': 'Hamdan',
+      'Khalydiha Shop': 'Khalidiyah',
+      'Mouroor Shop': 'Muroor',
+      'Satwa Shop': 'Satwa',
+      'Shabiha Shop': 'Shabiya'
+    };
 
-  // --- Init Date Picker ---
-  flatpickr("#dateRange", {
-    mode:"range", dateFormat:"Y-m-d",
-    onClose: (dates) => updateDashboard(dates)
-  });
+    // Provided delivery sales data (Jan–April 2025)
+    const providedDeliverySales = [
+      { Date: '2025-01-01', 'Barsha Shop': 1644.42, 'Hamdan Shop': 3826.34, 'Khalydiha Shop': 2507.46, 'Mouroor Shop': 1491.36, 'Satwa Shop': 546.85, 'Shabiya Shop': 1336.69 },
+      { Date: '2025-01-02', 'Barsha Shop': 1874.26, 'Hamdan Shop': 2516.93, 'Khalydiha Shop': 1839.71, 'Mouroor Shop': 1228.67, 'Satwa Shop': 907.6, 'Shabiya Shop': 1511.48 },
+      { Date: '2025-01-03', 'Barsha Shop': 1674.3, 'Hamdan Shop': 3338.91, 'Khalydiha Shop': 1858.38, 'Mouroor Shop': 1392.6, 'Satwa Shop': 562.73, 'Shabiya Shop': 1587.6 },
+      { Date: '2025-01-04', 'Barsha Shop': 1677.43, 'Hamdan Shop': 4383.58, 'Khalydiha Shop': 1498.64, 'Mouroor Shop': 1485.55, 'Satwa Shop': 837.73, 'Shabiya Shop': 1192.66 },
+      { Date: '2025-01-05', 'Barsha Shop': 1320.35, 'Hamdan Shop': 3410.83, 'Khalydiha Shop': 1722.67, 'Mouroor Shop': 1709.27, 'Satwa Shop': 568.79, 'Shabiya Shop': 954.68 },
+      { Date: '2025-01-06', 'Barsha Shop': 1099.65, 'Hamdan Shop': 4599.34, 'Khalydiha Shop': 1720.27, 'Mouroor Shop': 2175.13, 'Satwa Shop': 807.68, 'Shabiya Shop': 1707.5 },
+      { Date: '2025-01-07', 'Barsha Shop': 2218.85, 'Hamdan Shop': 4515.34, 'Khalydiha Shop': 2463.98, 'Mouroor Shop': 1876.96, 'Satwa Shop': 770.63, 'Shabiya Shop': 1951.52 },
+      { Date: '2025-01-08', 'Barsha Shop': 1685.47, 'Hamdan Shop': 2940.91, 'Khalydiha Shop': 1631.49, 'Mouroor Shop': 1689.31, 'Satwa Shop': 557.79, 'Shabiya Shop': 1592.64 },
+      { Date: '2025-01-09', 'Barsha Shop': 2274.9, 'Hamdan Shop': 2800.3, 'Khalydiha Shop': 1643.33, 'Mouroor Shop': 2044.27, 'Satwa Shop': 997.61, 'Shabiya Shop': 1567.41 },
+      { Date: '2025-01-10', 'Barsha Shop': 2280.41, 'Hamdan Shop': 4231.62, 'Khalydiha Shop': 2365.57, 'Mouroor Shop': 2538.04, 'Satwa Shop': 1160.43, 'Shabiya Shop': 1920.52 },
+      { Date: '2025-01-11', 'Barsha Shop': 1949.26, 'Hamdan Shop': 4181.46, 'Khalydiha Shop': 2163.39, 'Mouroor Shop': 1892.35, 'Satwa Shop': 1054.76, 'Shabiya Shop': 1713.34 },
+      { Date: '2025-01-12', 'Barsha Shop': 1620.47, 'Hamdan Shop': 4012.76, 'Khalydiha Shop': 1819.4, 'Mouroor Shop': 2215.43, 'Satwa Shop': 1069.57, 'Shabiya Shop': 1558.49 },
+      { Date: '2025-01-13', 'Barsha Shop': 1789.59, 'Hamdan Shop': 5220.35, 'Khalydiha Shop': 2488.75, 'Mouroor Shop': 2776.5, 'Satwa Shop': 1559.74, 'Shabiya Shop': 2249.67 },
+      { Date: '2025-01-14', 'Barsha Shop': 2188.36, 'Hamdan Shop': 4965.58, 'Khalydiha Shop': 2541.56, 'Mouroor Shop': 2836.61, 'Satwa Shop': 1332.76, 'Shabiya Shop': 2228.78 },
+      { Date: '2025-01-15', 'Barsha Shop': 1249.4, 'Hamdan Shop': 3886.86, 'Khalydiha Shop': 1383.48, 'Mouroor Shop': 1944.43, 'Satwa Shop': 437.82, 'Shabiya Shop': 1683.31 },
+      { Date: '2025-01-16', 'Barsha Shop': 1471.46, 'Hamdan Shop': 3212.9, 'Khalydiha Shop': 1488.65, 'Mouroor Shop': 1959.35, 'Satwa Shop': 673.71, 'Shabiya Shop': 1270.68 },
+      { Date: '2025-01-17', 'Barsha Shop': 1577.39, 'Hamdan Shop': 3295.87, 'Khalydiha Shop': 2695.2, 'Mouroor Shop': 1963.06, 'Satwa Shop': 717.69, 'Shabiya Shop': 2117.55 },
+      { Date: '2025-01-18', 'Barsha Shop': 1290.27, 'Hamdan Shop': 3477.94, 'Khalydiha Shop': 1915.32, 'Mouroor Shop': 1464.79, 'Satwa Shop': 758.72, 'Shabiya Shop': 1434.49 },
+      { Date: '2025-01-19', 'Barsha Shop': 988, 'Hamdan Shop': 2446.9, 'Khalydiha Shop': 1441.9, 'Mouroor Shop': 1148, 'Satwa Shop': 512, 'Shabiya Shop': 1702 },
+      { Date: '2025-01-20', 'Barsha Shop': 3317, 'Hamdan Shop': 5909, 'Khalydiha Shop': 2198.9, 'Mouroor Shop': 2607, 'Satwa Shop': 1216.9, 'Shabiya Shop': 2304 },
+      { Date: '2025-01-21', 'Barsha Shop': 2333, 'Hamdan Shop': 5323.9, 'Khalydiha Shop': 2684, 'Mouroor Shop': 2338, 'Satwa Shop': 912, 'Shabiya Shop': 2570 },
+      { Date: '2025-01-22', 'Barsha Shop': 1510.9, 'Hamdan Shop': 3472.9, 'Khalydiha Shop': 1367, 'Mouroor Shop': 1194.8, 'Satwa Shop': 869, 'Shabiya Shop': 904.9 },
+      { Date: '2025-01-23', 'Barsha Shop': 1705.9, 'Hamdan Shop': 2808.9, 'Khalydiha Shop': 1661.9, 'Mouroor Shop': 1650, 'Satwa Shop': 557, 'Shabiya Shop': 1528 },
+      { Date: '2025-01-24', 'Barsha Shop': 2127, 'Hamdan Shop': 4341.8, 'Khalydiha Shop': 2298.8, 'Mouroor Shop': 1355, 'Satwa Shop': 413, 'Shabiya Shop': 2854 },
+      { Date: '2025-01-25', 'Barsha Shop': 1611, 'Hamdan Shop': 3025, 'Khalydiha Shop': 1887, 'Mouroor Shop': 1712, 'Satwa Shop': 980, 'Shabiya Shop': 2053.8 },
+      { Date: '2025-01-26', 'Barsha Shop': 1515, 'Hamdan Shop': 2092, 'Khalydiha Shop': 1108, 'Mouroor Shop': 1583.9, 'Satwa Shop': 1085, 'Shabiya Shop': 548 },
+      { Date: '2025-01-27', 'Barsha Shop': 1716, 'Hamdan Shop': 5718.9, 'Khalydiha Shop': 2047, 'Mouroor Shop': 1928, 'Satwa Shop': 911, 'Shabiya Shop': 2206 },
+      { Date: '2025-01-28', 'Barsha Shop': 2818, 'Hamdan Shop': 5546, 'Khalydiha Shop': 2624, 'Mouroor Shop': 2897, 'Satwa Shop': 1442, 'Shabiya Shop': 2395 },
+      { Date: '2025-01-29', 'Barsha Shop': 1795, 'Hamdan Shop': 2606, 'Khalydiha Shop': 1851, 'Mouroor Shop': 1898, 'Satwa Shop': 758, 'Shabiya Shop': 1210 },
+      { Date: '2025-01-30', 'Barsha Shop': 1667, 'Hamdan Shop': 2825.7, 'Khalydiha Shop': 1599, 'Mouroor Shop': 2025.4, 'Satwa Shop': 721, 'Shabiya Shop': 1020 },
+      { Date: '2025-01-31', 'Barsha Shop': 1762, 'Hamdan Shop': 4365.6, 'Khalydiha Shop': 1844.6, 'Mouroor Shop': 2727.9, 'Satwa Shop': 1149, 'Shabiya Shop': 1903 },
+      { Date: '2025-02-01', 'Barsha Shop': 2433, 'Hamdan Shop': 3825.9, 'Khalydiha Shop': 2693, 'Mouroor Shop': 1783, 'Satwa Shop': 888, 'Shabiya Shop': 1839 },
+      { Date: '2025-02-02', 'Barsha Shop': 1730, 'Hamdan Shop': 2734, 'Khalydiha Shop': 1351, 'Mouroor Shop': 2175, 'Satwa Shop': 844, 'Shabiya Shop': 1223 },
+      { Date: '2025-02-03', 'Barsha Shop': 1895, 'Hamdan Shop': 5713.9, 'Khalydiha Shop': 1973, 'Mouroor Shop': 2187, 'Satwa Shop': 922, 'Shabiya Shop': 2763 },
+      { Date: '2025-02-04', 'Barsha Shop': 2172, 'Hamdan Shop': 5149, 'Khalydiha Shop': 2312, 'Mouroor Shop': 3296, 'Satwa Shop': 973.9, 'Shabiya Shop': 2511 },
+      { Date: '2025-02-05', 'Barsha Shop': 1381, 'Hamdan Shop': 2080, 'Khalydiha Shop': 1600.8, 'Mouroor Shop': 1418, 'Satwa Shop': 485, 'Shabiya Shop': 1178 },
+      { Date: '2025-02-06', 'Barsha Shop': 1729, 'Hamdan Shop': 2963, 'Khalydiha Shop': 1595.9, 'Mouroor Shop': 1682, 'Satwa Shop': 905, 'Shabiya Shop': 1929.9 },
+      { Date: '2025-02-07', 'Barsha Shop': 2481.9, 'Hamdan Shop': 3513.9, 'Khalydiha Shop': 2204.9, 'Mouroor Shop': 1782, 'Satwa Shop': 751, 'Shabiya Shop': 1991 },
+      { Date: '2025-02-08', 'Barsha Shop': 1763, 'Hamdan Shop': 4977.8, 'Khalydiha Shop': 2920, 'Mouroor Shop': 1446, 'Satwa Shop': 483.9, 'Shabiya Shop': 2271.9 },
+      { Date: '2025-02-09', 'Barsha Shop': 1345, 'Hamdan Shop': 3256.9, 'Khalydiha Shop': 977, 'Mouroor Shop': 1397.9, 'Satwa Shop': 600, 'Shabiya Shop': 1500 },
+      { Date: '2025-02-10', 'Barsha Shop': 2592.7, 'Hamdan Shop': 9352, 'Khalydiha Shop': 1902, 'Mouroor Shop': 3030, 'Satwa Shop': 1387, 'Shabiya Shop': 2728 },
+      { Date: '2025-02-11', 'Barsha Shop': 2053, 'Hamdan Shop': 6183, 'Khalydiha Shop': 1835, 'Mouroor Shop': 2771, 'Satwa Shop': 1009, 'Shabiya Shop': 2609 },
+      { Date: '2025-02-12', 'Barsha Shop': 1628, 'Hamdan Shop': 3116.8, 'Khalydiha Shop': 1328, 'Mouroor Shop': 2287.9, 'Satwa Shop': 593.9, 'Shabiya Shop': 1000 },
+      { Date: '2025-02-13', 'Barsha Shop': 1761, 'Hamdan Shop': 2736.8, 'Khalydiha Shop': 1460.9, 'Mouroor Shop': 1298.9, 'Satwa Shop': 786, 'Shabiya Shop': 1368 },
+      { Date: '2025-02-14', 'Barsha Shop': 1635, 'Hamdan Shop': 4573.8, 'Khalydiha Shop': 2339.9, 'Mouroor Shop': 2586.8, 'Satwa Shop': 821, 'Shabiya Shop': 1806 },
+      { Date: '2025-02-15', 'Barsha Shop': 1577, 'Hamdan Shop': 2821.9, 'Khalydiha Shop': 1817, 'Mouroor Shop': 1492.9, 'Satwa Shop': 629, 'Shabiya Shop': 2161.9 },
+      { Date: '2025-02-16', 'Barsha Shop': 1384.9, 'Hamdan Shop': 3022.8, 'Khalydiha Shop': 1349, 'Mouroor Shop': 2695.8, 'Satwa Shop': 797, 'Shabiya Shop': 1828 },
+      { Date: '2025-02-17', 'Barsha Shop': 2040, 'Hamdan Shop': 5180.9, 'Khalydiha Shop': 2233, 'Mouroor Shop': 2745, 'Satwa Shop': 1351, 'Shabiya Shop': 3401 },
+      { Date: '2025-02-18', 'Barsha Shop': 1656, 'Hamdan Shop': 5282, 'Khalydiha Shop': 1937, 'Mouroor Shop': 3019, 'Satwa Shop': 1459, 'Shabiya Shop': 1950 },
+      { Date: '2025-02-19', 'Barsha Shop': 2142, 'Hamdan Shop': 1833, 'Khalydiha Shop': 1197, 'Mouroor Shop': 778, 'Satwa Shop': 434, 'Shabiya Shop': 605 },
+      { Date: '2025-02-20', 'Barsha Shop': 1911, 'Hamdan Shop': 3015.9, 'Khalydiha Shop': 846, 'Mouroor Shop': 1996.8, 'Satwa Shop': 457, 'Shabiya Shop': 599 },
+      { Date: '2025-02-21', 'Barsha Shop': 1954, 'Hamdan Shop': 3731.9, 'Khalydiha Shop': 2080, 'Mouroor Shop': 2645, 'Satwa Shop': 591, 'Shabiya Shop': 1509 },
+      { Date: '2025-02-22', 'Barsha Shop': 1175, 'Hamdan Shop': 4756.9, 'Khalydiha Shop': 1713, 'Mouroor Shop': 1801.9, 'Satwa Shop': 1567, 'Shabiya Shop': 1446.9 },
+      { Date: '2025-02-23', 'Barsha Shop': 1638, 'Hamdan Shop': 3429, 'Khalydiha Shop': 1588.8, 'Mouroor Shop': 1129.9, 'Satwa Shop': 1106, 'Shabiya Shop': 1407 },
+      { Date: '2025-02-24', 'Barsha Shop': 1535, 'Hamdan Shop': 3524, 'Khalydiha Shop': 1757.7, 'Mouroor Shop': 1612.9, 'Satwa Shop': 1081, 'Shabiya Shop': 2170 },
+      { Date: '2025-02-25', 'Barsha Shop': 2629, 'Hamdan Shop': 4078.8, 'Khalydiha Shop': 1971, 'Mouroor Shop': 1885, 'Satwa Shop': 1062, 'Shabiya Shop': 2373.8 },
+      { Date: '2025-02-26', 'Barsha Shop': 1859, 'Hamdan Shop': 3330, 'Khalydiha Shop': 2170.9, 'Mouroor Shop': 2029.8, 'Satwa Shop': 919.9, 'Shabiya Shop': 1948 },
+      { Date: '2025-02-27', 'Barsha Shop': 2308.9, 'Hamdan Shop': 3325.8, 'Khalydiha Shop': 2151, 'Mouroor Shop': 2163, 'Satwa Shop': 805, 'Shabiya Shop': 1542 },
+      { Date: '2025-02-28', 'Barsha Shop': 1290, 'Hamdan Shop': 4035.9, 'Khalydiha Shop': 2412.9, 'Mouroor Shop': 3301, 'Satwa Shop': 640, 'Shabiya Shop': 1445.9 },
+      { Date: '2025-03-01', 'Barsha Shop': 754, 'Hamdan Shop': 2299, 'Khalydiha Shop': 753, 'Mouroor Shop': 914, 'Satwa Shop': 589, 'Shabiya Shop': 799 },
+      { Date: '2025-03-02', 'Barsha Shop': 540.9, 'Hamdan Shop': 2156, 'Khalydiha Shop': 995.9, 'Mouroor Shop': 474, 'Satwa Shop': 654, 'Shabiya Shop': 697 },
+      { Date: '2025-03-03', 'Barsha Shop': 561, 'Hamdan Shop': 2538, 'Khalydiha Shop': 847, 'Mouroor Shop': 1012, 'Satwa Shop': 747, 'Shabiya Shop': 1202 },
+      { Date: '2025-03-04', 'Barsha Shop': 1231, 'Hamdan Shop': 1838, 'Khalydiha Shop': 962, 'Mouroor Shop': 1011, 'Satwa Shop': 515, 'Shabiya Shop': 702 },
+      { Date: '2025-03-05', 'Barsha Shop': 1162, 'Hamdan Shop': 2042.8, 'Khalydiha Shop': 994, 'Mouroor Shop': 1113, 'Satwa Shop': 569.9, 'Shabiya Shop': 827 },
+      { Date: '2025-03-06', 'Barsha Shop': 1353, 'Hamdan Shop': 2384.9, 'Khalydiha Shop': 1141, 'Mouroor Shop': 1395, 'Satwa Shop': 404, 'Shabiya Shop': 1076 },
+      { Date: '2025-03-07', 'Barsha Shop': 1787, 'Hamdan Shop': 2623, 'Khalydiha Shop': 1459, 'Mouroor Shop': 921, 'Satwa Shop': 439, 'Shabiya Shop': 1396.8 },
+      { Date: '2025-03-08', 'Barsha Shop': 2007.9, 'Hamdan Shop': 2508, 'Khalydiha Shop': 1369, 'Mouroor Shop': 1476.9, 'Satwa Shop': 579, 'Shabiya Shop': 1324 },
+      { Date: '2025-03-09', 'Barsha Shop': 1224, 'Hamdan Shop': 2363, 'Khalydiha Shop': 1150.9, 'Mouroor Shop': 1024, 'Satwa Shop': 562, 'Shabiya Shop': 1212 },
+      { Date: '2025-03-10', 'Barsha Shop': 1135, 'Hamdan Shop': 2624.9, 'Khalydiha Shop': 1409, 'Mouroor Shop': 1201, 'Satwa Shop': 471, 'Shabiya Shop': 887 },
+      { Date: '2025-03-11', 'Barsha Shop': 1298.9, 'Hamdan Shop': 2340.8, 'Khalydiha Shop': 1088, 'Mouroor Shop': 1342.9, 'Satwa Shop': 712, 'Shabiya Shop': 1358.9 },
+      { Date: '2025-03-12', 'Barsha Shop': 887, 'Hamdan Shop': 2182, 'Khalydiha Shop': 1116, 'Mouroor Shop': 1100, 'Satwa Shop': 976, 'Shabiya Shop': 850 },
+      { Date: '2025-03-13', 'Barsha Shop': 989, 'Hamdan Shop': 2454, 'Khalydiha Shop': 1180, 'Mouroor Shop': 1156, 'Satwa Shop': 401.9, 'Shabiya Shop': 1093 },
+      { Date: '2025-03-14', 'Barsha Shop': 1005, 'Hamdan Shop': 2978.9, 'Khalydiha Shop': 1742, 'Mouroor Shop': 1005, 'Satwa Shop': 793, 'Shabiya Shop': 1221.8 },
+      { Date: '2025-03-15', 'Barsha Shop': 1445, 'Hamdan Shop': 3246, 'Khalydiha Shop': 1663, 'Mouroor Shop': 866, 'Satwa Shop': 991, 'Shabiya Shop': 1027 },
+      { Date: '2025-03-16', 'Barsha Shop': 1568, 'Hamdan Shop': 2380, 'Khalydiha Shop': 1497, 'Mouroor Shop': 1188, 'Satwa Shop': 645, 'Shabiya Shop': 1211.9 },
+      { Date: '2025-03-17', 'Barsha Shop': 1267, 'Hamdan Shop': 1733, 'Khalydiha Shop': 902, 'Mouroor Shop': 1183, 'Satwa Shop': 443, 'Shabiya Shop': 1123 },
+      { Date: '2025-03-18', 'Barsha Shop': 814, 'Hamdan Shop': 3212.9, 'Khalydiha Shop': 1209, 'Mouroor Shop': 1598, 'Satwa Shop': 354, 'Shabiya Shop': 1256 },
+      { Date: '2025-03-19', 'Barsha Shop': 1206, 'Hamdan Shop': 1647.9, 'Khalydiha Shop': 1892, 'Mouroor Shop': 1203.8, 'Satwa Shop': 557, 'Shabiya Shop': 1475 },
+      { Date: '2025-03-20', 'Barsha Shop': 1330, 'Hamdan Shop': 2876.9, 'Khalydiha Shop': 945, 'Mouroor Shop': 1249.8, 'Satwa Shop': 699, 'Shabiya Shop': 1633 },
+      { Date: '2025-03-21', 'Barsha Shop': 1199, 'Hamdan Shop': 3716.8, 'Khalydiha Shop': 1584, 'Mouroor Shop': 1647.9, 'Satwa Shop': 742, 'Shabiya Shop': 1357.9 },
+      { Date: '2025-03-22', 'Barsha Shop': 1703, 'Hamdan Shop': 2556.9, 'Khalydiha Shop': 856, 'Mouroor Shop': 1301.9, 'Satwa Shop': 776.9, 'Shabiya Shop': 1729.9 },
+      { Date: '2025-03-23', 'Barsha Shop': 1347, 'Hamdan Shop': 2214.9, 'Khalydiha Shop': 1236, 'Mouroor Shop': 1020, 'Satwa Shop': 663, 'Shabiya Shop': 1336.9 },
+      { Date: '2025-03-24', 'Barsha Shop': 1269, 'Hamdan Shop': 3100.9, 'Khalydiha Shop': 1517, 'Mouroor Shop': 1082, 'Satwa Shop': 761, 'Shabiya Shop': 1030 },
+      { Date: '2025-03-25', 'Barsha Shop': 1768, 'Hamdan Shop': 2631, 'Khalydiha Shop': 1513, 'Mouroor Shop': 1314, 'Satwa Shop': 437, 'Shabiya Shop': 1434 },
+      { Date: '2025-03-26', 'Barsha Shop': 1756, 'Hamdan Shop': 2111, 'Khalydiha Shop': 1559.9, 'Mouroor Shop': 898, 'Satwa Shop': 971, 'Shabiya Shop': 1258 },
+      { Date: '2025-03-27', 'Barsha Shop': 1903, 'Hamdan Shop': 2649, 'Khalydiha Shop': 1739, 'Mouroor Shop': 1429, 'Satwa Shop': 1063, 'Shabiya Shop': 1628 },
+      { Date: '2025-03-28', 'Barsha Shop': 1575, 'Hamdan Shop': 3737.8, 'Khalydiha Shop': 1993, 'Mouroor Shop': 1701.9, 'Satwa Shop': 550, 'Shabiya Shop': 1398 },
+      { Date: '2025-03-29', 'Barsha Shop': 1719, 'Hamdan Shop': 5034, 'Khalydiha Shop': 1713, 'Mouroor Shop': 2592, 'Satwa Shop': 754, 'Shabiya Shop': 2184 },
+      { Date: '2025-03-30', 'Barsha Shop': 2413.9, 'Hamdan Shop': 5554.9, 'Khalydiha Shop': 3767, 'Mouroor Shop': 3191, 'Satwa Shop': 1594.9, 'Shabiya Shop': 2223 },
+      { Date: '2025-03-31', 'Barsha Shop': 1856, 'Hamdan Shop': 6045.9, 'Khalydiha Shop': 2827.9, 'Mouroor Shop': 3195.9, 'Satwa Shop': 1519, 'Shabiya Shop': 2321 },
+      { Date: '2025-04-01', 'Barsha Shop': 2059, 'Hamdan Shop': 4877.15, 'Khalydiha Shop': 2128.9, 'Mouroor Shop': 2820.8, 'Satwa Shop': 909, 'Shabiya Shop': 1286 },
+      { Date: '2025-04-02', 'Barsha Shop': 1618, 'Hamdan Shop': 2944.9, 'Khalydiha Shop': 1092, 'Mouroor Shop': 1512.8, 'Satwa Shop': 745, 'Shabiya Shop': 1440 },
+      { Date: '2025-04-03', 'Barsha Shop': 1321.8, 'Hamdan Shop': 2491, 'Khalydiha Shop': 1660.9, 'Mouroor Shop': 1260.9, 'Satwa Shop': 948, 'Shabiya Shop': 1077 },
+      { Date: '2025-04-04', 'Barsha Shop': 1945, 'Hamdan Shop': 3929, 'Khalydiha Shop': 2218.9, 'Mouroor Shop': 2534.9, 'Satwa Shop': 859, 'Shabiya Shop': 885 },
+      { Date: '2025-04-05', 'Barsha Shop': 2258, 'Hamdan Shop': 3508, 'Khalydiha Shop': 1736.9, 'Mouroor Shop': 1572.9, 'Satwa Shop': 1317, 'Shabiya Shop': 1833 },
+      { Date: '2025-04-06', 'Barsha Shop': 2016.9, 'Hamdan Shop': 3932.9, 'Khalydiha Shop': 1981.9, 'Mouroor Shop': 1731, 'Satwa Shop': 1098, 'Shabiya Shop': 2401 },
+      { Date: '2025-04-07', 'Barsha Shop': 2988.9, 'Hamdan Shop': 5638, 'Khalydiha Shop': 3136, 'Mouroor Shop': 2993, 'Satwa Shop': 1333, 'Shabiya Shop': 3161 }
+    ];
 
-  // --- Export PDF ---
-  document.getElementById("exportPDF").addEventListener("click", () => {
-    const element = document.getElementById("dashboard");
-    const opt = { margin:0.5, filename:"CrispyChicken_Report.pdf", image:{type:"jpeg",quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:"in",format:"letter",orientation:"landscape"} };
-    html2pdf().from(element).set(opt).save();
-  });
+    // Initialize with provided September 2025 totals
+    let salesData = [];
+    const branches = ['Hamdan', 'Shabiya', 'Khalidiyah', 'Muroor', 'Barsha', 'Satwa'];
+    const septemberTotals = {
+      'Hamdan': { deliveryOrders: 983, deliverySales: 43645.9, peakDay: '2025-09-02', peakSales: 5977.0 },
+      'Shabiya': { deliveryOrders: 567, deliverySales: 26410.0, peakDay: '2025-09-02', peakSales: 3384.9 },
+      'Khalidiyah': { deliveryOrders: 508, deliverySales: 24320.5, peakDay: '2025-09-02', peakSales: 3238.0 },
+      'Muroor': { deliveryOrders: 466, deliverySales: 22598.4, peakDay: '2025-09-02', peakSales: 3221.0 },
+      'Barsha': { deliveryOrders: 387, deliverySales: 18809.4, peakDay: '2025-09-01', peakSales: 3207.0 },
+      'Satwa': { deliveryOrders: 219, deliverySales: 10039.5, peakDay: '2025-09-02', peakSales: 1500.0 }
+    };
 
-  // --- Branch Notes Persistence ---
-  function loadNotes() {
-    document.querySelectorAll('.notes-panel textarea').forEach((area, i) => {
-      area.value = localStorage.getItem(`branchNotes${i}`) || "";
-      area.addEventListener('input', () => localStorage.setItem(`branchNotes${i}`, area.value));
+    // Process provided delivery sales (Jan–April 2025)
+    providedDeliverySales.forEach(row => {
+      branches.forEach(branch => {
+        const deliverySales = row[Object.keys(branchMapping).find(key => branchMapping[key] === branch)] || 0;
+        const avgOrderValue = septemberTotals[branch].deliverySales / septemberTotals[branch].deliveryOrders;
+        const deliveryOrders = Math.round(deliverySales / avgOrderValue);
+        salesData.push({
+          date: row.Date,
+          outlet: branch,
+          deliveryOrders: deliveryOrders,
+          deliverySales: parseFloat(deliverySales.toFixed(1))
+        });
+      });
     });
-  }
 
-  // --- Dashboard Update ---
-  function updateDashboard(dates=null) {
-    let filtered = [...salesData];
-    if (dates && dates.length === 2) {
-      let [start,end] = dates;
-      filtered = salesData.filter(r => {
-        let d = new Date(r.date);
-        return d >= start && d <= end;
+    // Generate dummy data for May–August 2025
+    function generateDummyData(month, days) {
+      const monthlyFactors = {
+        '2025-05': 0.9,
+        '2025-06': 0.95,
+        '2025-07': 1.0,
+        '2025-08': 1.05
+      };
+      const data = [];
+      for (let day = 1; day <= days; day++) {
+        const date = `${month}-${String(day).padStart(2, '0')}`;
+        branches.forEach(branch => {
+          const factor = monthlyFactors[month];
+          const avgOrderValue = septemberTotals[branch].deliverySales / septemberTotals[branch].deliveryOrders;
+          const dailyDeliverySales = (septemberTotals[branch].deliverySales / 24 * factor).toFixed(1);
+          const dailyDeliveryOrders = Math.round(dailyDeliverySales / avgOrderValue);
+          data.push({
+            date,
+            outlet: branch,
+            deliveryOrders: dailyDeliveryOrders,
+            deliverySales: parseFloat(dailyDeliverySales)
+          });
+        });
+      }
+      return data;
+    }
+    salesData = salesData.concat(generateDummyData('2025-05', 31));
+    salesData = salesData.concat(generateDummyData('2025-06', 30));
+    salesData = salesData.concat(generateDummyData('2025-07', 31));
+    salesData = salesData.concat(generateDummyData('2025-08', 31));
+
+    // Generate September 2025 data
+    for (let day = 1; day <= 24; day++) {
+      const date = `2025-09-${String(day).padStart(2, '0')}`;
+      branches.forEach(branch => {
+        const dailyDeliveryOrders = Math.round(septemberTotals[branch].deliveryOrders / 24);
+        const dailyDeliverySales = (septemberTotals[branch].deliverySales / 24).toFixed(1);
+        salesData.push({
+          date,
+          outlet: branch,
+          deliveryOrders: dailyDeliveryOrders,
+          deliverySales: parseFloat(dailyDeliverySales)
+        });
       });
     }
+    // Adjust last day to match September totals
+    const lastDayData = salesData.filter(d => d.date === '2025-09-24');
+    branches.forEach(branch => {
+      const branchData = salesData.filter(d => d.outlet === branch);
+      const currentDeliveryOrders = branchData.reduce((sum, d) => sum + d.deliveryOrders, 0);
+      const currentDeliverySales = branchData.reduce((sum, d) => sum + d.deliverySales, 0);
+      const lastDayEntry = lastDayData.find(d => d.outlet === branch);
+      lastDayEntry.deliveryOrders += septemberTotals[branch].deliveryOrders - currentDeliveryOrders;
+      lastDayEntry.deliverySales += septemberTotals[branch].deliverySales - currentDeliverySales;
+      lastDayEntry.deliverySales = parseFloat(lastDayEntry.deliverySales.toFixed(1));
+    });
 
-    // KPIs
-    let totalSales = filtered.reduce((a,b)=>a+b.sales,0);
-    let totalOrders = filtered.reduce((a,b)=>a+b.orders,0);
-    let deliveryOrders = filtered.reduce((a,b)=>a+b.delivery,0);
-    let deliveryPct = totalOrders? ((deliveryOrders/totalOrders)*100).toFixed(1):0;
-    let topBranch = Object.entries(filtered.reduce((acc,r)=>{acc[r.branch]=(acc[r.branch]||0)+r.sales; return acc;},{}))
-      .sort((a,b)=>b[1]-a[1])[0];
-    document.getElementById("kpiSales").textContent = "AED "+totalSales.toLocaleString();
-    document.getElementById("kpiOrders").textContent = totalOrders;
-    document.getElementById("kpiDelivery").textContent = deliveryPct+"%";
-    document.getElementById("kpiBranch").textContent = topBranch? topBranch[0]:"-";
+    // Load saved data from localStorage
+    const savedData = localStorage.getItem('salesData');
+    if (savedData) {
+      salesData = JSON.parse(savedData);
+    }
 
-    // Branch Cards
-    let branches = [...new Set(filtered.map(r=>r.branch))];
-    let container = document.getElementById("branchCards");
-    container.innerHTML = "";
-    branches.forEach((br,i)=>{
-      let sales = filtered.filter(r=>r.branch===br).reduce((a,b)=>a+b.sales,0);
-      let orders = filtered.filter(r=>r.branch===br).reduce((a,b)=>a+b.orders,0);
-      container.innerHTML += `
-        <div class="branch-card">
-          <h3 class="font-bold text-lg mb-1">🏪 ${br}</h3>
-          <p>💰 Sales: AED ${sales}</p>
-          <p>📦 Orders: ${orders}</p>
-          <div class="notes-panel mt-2">
-            <textarea placeholder="Manager notes for ${br}..."></textarea>
+    // Initialize DataTable and Charts
+    $(document).ready(function() {
+      const table = $('#dataTable').DataTable({
+        data: salesData,
+        columns: [
+          { data: 'date', render: data => data ? new Date(data).toLocaleDateString('en-GB') : '' },
+          { data: 'outlet' },
+          { data: 'deliveryOrders' },
+          { data: 'deliverySales', render: data => data ? parseFloat(data).toLocaleString('en-AE', { minimumFractionDigits: 1 }) + ' AED' : '' },
+          {
+            data: null,
+            render: (data, type, row, meta) => `
+              <button onclick="editRow(${meta.row})" class="px-2 py-1 bg-yellow-500 text-white rounded">Edit</button>
+              <button onclick="deleteRow(${meta.row})" class="px-2 py-1 bg-red-500 text-white rounded">Delete</button>
+            `
+          }
+        ],
+        pageLength: 10,
+        order: [[0, 'desc']],
+        language: { searchPlaceholder: 'Search records...', search: '' }
+      });
+
+      // Month filter
+      $('#monthFilterTop').on('change', function() {
+        const month = $(this).val();
+        table.draw();
+        updateKpis(month);
+        renderBranches(month);
+        updateCharts(month);
+      });
+
+      // Custom DataTable filter
+      $.fn.dataTable.ext.search.push((settings, data, dataIndex) => {
+        const month = $('#monthFilterTop').val();
+        const startDate = $('#startDate').val();
+        const endDate = $('#endDate').val();
+        const selectedBranches = Array.from($('#branchFilter').val());
+        const row = salesData[dataIndex];
+        const rowDate = row.date;
+        const rowOutlet = row.outlet;
+        if (month !== 'all' && rowDate && !rowDate.startsWith(month)) return false;
+        if (startDate && rowDate < startDate) return false;
+        if (endDate && rowDate > endDate) return false;
+        if (!selectedBranches.includes('all') && !selectedBranches.includes(rowOutlet)) return false;
+        return true;
+      });
+
+      // Apply filters
+      $('#applyFilters').on('click', function() {
+        showLoading();
+        setTimeout(() => {
+          table.draw();
+          updateKpis($('#monthFilterTop').val());
+          renderBranches($('#monthFilterTop').val());
+          updateCharts($('#monthFilterTop').val());
+          hideLoading();
+          showNotification('Filters applied', 'success');
+        }, 500);
+      });
+
+      // Initial render
+      updateKpis('2025-09');
+      renderBranches('2025-09');
+      updateCharts('2025-09');
+      updateLastUpdated();
+
+      // Event listeners
+      $('#btnClearInput').on('click', () => $('#dataInput').val(''));
+      $('#btnUpdate').on('click', updateData);
+      $('#btnExportCSV').on('click', exportCSV);
+      $('#btnExportPDF').on('click', exportPDF);
+      $('#btnExportExcel').on('click', exportExcel);
+      $('#btnReset').on('click', resetData);
+      $('#darkModeToggle').on('click', () => $('html').toggleClass('dark'));
+
+      // Resize charts on window resize
+      window.addEventListener('resize', () => {
+        if (barChart) barChart.resize();
+        if (lineChart) lineChart.resize();
+        if (pieChart) pieChart.resize();
+      });
+    });
+
+    // Chart instances
+    let barChart, lineChart, pieChart;
+
+    // Update KPIs
+    function updateKpis(month) {
+      const filteredData = month === 'all' ? salesData : salesData.filter(d => d.date && d.date.startsWith(month));
+      const totalDeliverySales = filteredData.reduce((sum, d) => sum + (parseFloat(d.deliverySales) || 0), 0);
+      const totalDeliveryOrders = filteredData.reduce((sum, d) => sum + (d.deliveryOrders || 0), 0);
+      const avgDeliveryOrderValue = totalDeliveryOrders ? (totalDeliverySales / totalDeliveryOrders).toFixed(1) : 0;
+      const branchSales = branches.map(branch => ({
+        branch,
+        deliverySales: filteredData.filter(d => d.outlet === branch).reduce((sum, d) => sum + (parseFloat(d.deliverySales) || 0), 0)
+      }));
+      const topBranch = branchSales.reduce((max, b) => b.deliverySales > max.deliverySales ? b : max, { branch: '—', deliverySales: 0 }).branch;
+      const peakDayData = filteredData.reduce((max, d) => (!max || (parseFloat(d.deliverySales) || 0) > max.deliverySales ? { date: d.date, deliverySales: parseFloat(d.deliverySales) || 0 } : max), { date: '—', deliverySales: 0 });
+      const peakOrdersData = filteredData.reduce((max, d) => (!max || (d.deliveryOrders || 0) > max.deliveryOrders ? { date: d.date, deliveryOrders: d.deliveryOrders || 0 } : max), { date: '—', deliveryOrders: 0 });
+      const prevMonth = month === 'all' ? null : (month === '2025-01' ? null : `${parseInt(month.split('-')[0]) - 1}-12`);
+      const prevSales = prevMonth ? salesData.filter(d => d.date && d.date.startsWith(prevMonth)).reduce((sum, d) => sum + (parseFloat(d.deliverySales) || 0), 0) : 0;
+      const prevOrders = prevMonth ? salesData.filter(d => d.date && d.date.startsWith(prevMonth)).reduce((sum, d) => sum + (d.deliveryOrders || 0), 0) : 0;
+      const salesDelta = prevSales ? ((totalDeliverySales - prevSales) / prevSales * 100).toFixed(1) : 0;
+      const ordersDelta = prevOrders ? ((totalDeliveryOrders - prevOrders) / prevOrders * 100).toFixed(1) : 0;
+
+      $('#kpiSales').text(totalDeliverySales.toLocaleString('en-AE', { minimumFractionDigits: 1 }) + ' AED');
+      $('#kpiOrders').text(totalDeliveryOrders.toLocaleString('en-AE'));
+      $('#kpiAOV').text(avgDeliveryOrderValue + ' AED');
+      $('#kpiTopBranch').text(topBranch);
+      $('#kpiPeakDay').text(peakDayData.date !== '—' ? new Date(peakDayData.date).toLocaleDateString('en-GB') : '—');
+      $('#kpiPeakOrders').text(peakOrdersData.date !== '—' ? new Date(peakOrdersData.date).toLocaleDateString('en-GB') : '—');
+      $('#kpiSalesDelta').text(salesDelta >= 0 ? `+${salesDelta}%` : `${salesDelta}%`).removeClass('badge-up badge-down').addClass(salesDelta >= 0 ? 'badge-up' : 'badge-down');
+      $('#kpiOrdersGrowth').text(ordersDelta >= 0 ? `+${ordersDelta}%` : `${ordersDelta}%`).removeClass('badge-up badge-down').addClass(ordersDelta >= 0 ? 'badge-up' : 'badge-down');
+    }
+
+    // Render branch performance cards
+    function renderBranches(month) {
+      const filteredData = month === 'all' ? salesData : salesData.filter(d => d.date && d.date.startsWith(month));
+      const branchMetrics = branches.map(branch => {
+        const branchData = filteredData.filter(d => d.outlet === branch);
+        const totalDeliveryOrders = branchData.reduce((sum, d) => sum + (d.deliveryOrders || 0), 0);
+        const totalDeliverySales = branchData.reduce((sum, d) => sum + (parseFloat(d.deliverySales) || 0), 0);
+        const avgDeliveryOrder = totalDeliveryOrders ? (totalDeliverySales / totalDeliveryOrders).toFixed(1) : 0;
+        const peakDayData = month === '2025-09' ? septemberTotals[branch] : branchData.reduce((max, d) => (!max || (parseFloat(d.deliverySales) || 0) > max.deliverySales ? { date: d.date, deliverySales: parseFloat(d.deliverySales) || 0 } : max), { date: '—', deliverySales: 0 });
+        return {
+          branch,
+          totalDeliveryOrders,
+          totalDeliverySales: totalDeliverySales.toFixed(1),
+          avgDeliveryOrder,
+          peakDay: peakDayData.date !== '—' ? `${new Date(peakDayData.date).toLocaleDateString('en-GB')} (${peakDayData.deliverySales.toLocaleString('en-AE', { minimumFractionDigits: 1 })} AED)` : '—'
+        };
+      });
+
+      const row1Container = $('#branchRow1');
+      const row2Container = $('#branchRow2');
+      row1Container.html(branchMetrics.slice(0, 3).map(metric => `
+        <div class="card branch-card expandable p-4 min-w-[12rem] h-auto" onclick="toggleCard(this)">
+          <h3 class="font-semibold text-base">${metric.branch}</h3>
+          <div class="mt-2">
+            <div class="small">Delivery Orders: <span>${metric.totalDeliveryOrders.toLocaleString('en-AE')}</span></div>
+            <div class="small">Delivery Sales: <span>${metric.totalDeliverySales.toLocaleString('en-AE', { minimumFractionDigits: 1 })} AED</span></div>
+            <div class="details mt-2">
+              <div class="small">Avg Delivery Order: <span>${metric.avgDeliveryOrder} AED</span></div>
+              <div class="small">Peak Day: <span>${metric.peakDay}</span></div>
+            </div>
+            <div class="small mt-2 text-gray-500">Click to expand</div>
           </div>
-        </div>`;
-    });
-    loadNotes();
+        </div>
+      `).join(''));
+      row2Container.html(branchMetrics.slice(3, 6).map(metric => `
+        <div class="card branch-card expandable p-4 min-w-[12rem] h-auto" onclick="toggleCard(this)">
+          <h3 class="font-semibold text-base">${metric.branch}</h3>
+          <div class="mt-2">
+            <div class="small">Delivery Orders: <span>${metric.totalDeliveryOrders.toLocaleString('en-AE')}</span></div>
+            <div class="small">Delivery Sales: <span>${metric.totalDeliverySales.toLocaleString('en-AE', { minimumFractionDigits: 1 })} AED</span></div>
+            <div class="details mt-2">
+              <div class="small">Avg Delivery Order: <span>${metric.avgDeliveryOrder} AED</span></div>
+              <div class="small">Peak Day: <span>${metric.peakDay}</span></div>
+            </div>
+            <div class="small mt-2 text-gray-500">Click to expand</div>
+          </div>
+        </div>
+      `).join(''));
+    }
 
-    // Table
-    let tbody = document.querySelector("#dataTable tbody");
-    tbody.innerHTML = "";
-    filtered.forEach(r=>{
-      tbody.innerHTML += `<tr class="border-b"><td>${r.date}</td><td>${r.branch}</td><td>${r.sales}</td><td>${r.orders}</td><td>${r.delivery}</td></tr>`;
-    });
+    // Toggle card expansion
+    function toggleCard(element) {
+      $(element).toggleClass('expanded');
+      $(element).find('.details').toggle();
+      const toggleText = $(element).find('.small.text-gray-500');
+      toggleText.text($(element).hasClass('expanded') ? 'Click to collapse' : 'Click to expand');
+    }
 
-    // Charts
-    renderCharts(filtered);
-  }
+    // Update charts
+    function updateCharts(month) {
+      const filteredData = month === 'all' ? salesData : salesData.filter(d => d.date && d.date.startsWith(month));
+      const days = Array.from({ length: 31 }, (_, i) => `${i + 1}`);
+      const branchTotals = branches.map(branch => ({
+        branch,
+        deliverySales: filteredData.filter(d => d.outlet === branch).reduce((sum, d) => sum + (parseFloat(d.deliverySales) || 0), 0)
+      }));
 
-  // --- Add Data ---
-  function addSampleData() {
-    let newRecord = {date:"2025-09-05", branch:"Dubai", sales:900, orders:80, delivery:45};
-    salesData.push(newRecord);
-    const picker = document.querySelector("#dateRange")._flatpickr;
-    let dates = picker && picker.selectedDates;
-    updateDashboard(dates && dates.length===2? dates:null);
-  }
+      // Bar Chart
+      if (barChart) barChart.destroy();
+      barChart = new Chart($('#barChart'), {
+        type: 'bar',
+        data: {
+          labels: branches,
+          datasets: [{
+            label: `Delivery Sales (${month === 'all' ? 'Jan–Sep 2025' : month})`,
+            data: branchTotals.map(b => b.deliverySales),
+            backgroundColor: ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e', '#e6ab02'],
+            borderColor: ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e', '#e6ab02'],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          scales: {
+            y: { beginAtZero: true, title: { display: true, text: 'Delivery Sales (AED)' } },
+            x: { title: { display: true, text: 'Branch' } }
+          },
+          plugins: {
+            legend: { display: true, position: 'top' },
+            title: { display: true, text: `Delivery Sales by Branch` },
+            datalabels: {
+              anchor: 'end',
+              align: 'top',
+              formatter: value => value.toLocaleString('en-AE', { minimumFractionDigits: 1 }) + ' AED'
+            }
+          }
+        }
+      });
 
-  // --- Charts ---
-  let charts={};
-  function renderCharts(data) {
-    let ctxs = {bar:"barChart", line:"lineChart", pie:"pieChart", heat:"heatmapChart"};
-    Object.values(ctxs).forEach(id=>{ if(charts[id]) charts[id].destroy(); });
-    // Bar
-    charts.barChart = new Chart(document.getElementById("barChart"), {
-      type:"bar",
-      data:{ labels:[...new Set(data.map(r=>r.branch))], datasets:[{ label:"Sales", data:Object.values(data.reduce((a,r)=>{a[r.branch]=(a[r.branch]||0)+r.sales;return a;},{})), backgroundColor:"#e63946"}] }
-    });
-    // Line
-    charts.lineChart = new Chart(document.getElementById("lineChart"), {
-      type:"line",
-      data:{ labels:data.map(r=>r.date), datasets:[{ label:"Sales", data:data.map(r=>r.sales), borderColor:"#f4a261", fill:false }] }
-    });
-    // Pie
-    charts.pieChart = new Chart(document.getElementById("pieChart"), {
-      type:"pie",
-      data:{ labels:[...new Set(data.map(r=>r.branch))], datasets:[{ data:Object.values(data.reduce((a,r)=>{a[r.branch]=(a[r.branch]||0)+r.sales;return a;},{})), backgroundColor:["#e63946","#f4a261","#2a9d8f"]}] }
-    });
-    // Heatmap (stacked bar as proxy)
-    charts.heatmapChart = new Chart(document.getElementById("heatmapChart"), {
-      type:"bar",
-      data:{ labels:data.map(r=>r.date), datasets:[{ label:"Delivery", data:data.map(r=>r.delivery), backgroundColor:"#264653"}] }
-    });
-  }
+      // Line Chart
+      if (lineChart) lineChart.destroy();
+      const dailySales = days.map((day, i) => {
+        const date = `${month || '2025-09'}-${String(i + 1).padStart(2, '0')}`;
+        return filteredData.filter(d => d.date === date).reduce((sum, d) => sum + (parseFloat(d.deliverySales) || 0), 0);
+      });
+      lineChart = new Chart($('#lineChart'), {
+        type: 'line',
+        data: {
+          labels: days.slice(0, filteredData.length ? Math.max(...filteredData.map(d => parseInt(d.date.split('-')[2] || 0))) : 31),
+          datasets: [{
+            label: 'Daily Delivery Sales',
+            data: dailySales,
+            borderColor: '#d7263d',
+            backgroundColor: 'rgba(215, 38, 61, 0.2)',
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          scales: {
+            y: { beginAtZero: true, title: { display: true, text: 'Delivery Sales (AED)' } },
+            x: { title: { display: true, text: `Date (${month === 'all' ? 'Jan–Sep 2025' : month})` } }
+          },
+          plugins: {
+            legend: { display: true, position: 'top' },
+            title: { display: true, text: `Daily Delivery Sales Trend` },
+            annotation: {
+              annotations: month === '2025-09' ? {
+                note: {
+                  type: 'label',
+                  xValue: 23,
+                  yValue: dailySales[23],
+                  content: ['Note: 24 Sep data adjusted'],
+                  backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                  borderColor: 'rgb(255, 99, 132)',
+                  borderWidth: 1,
+                  font: { size: 10 }
+                }
+              } : {}
+            }
+          }
+        }
+      });
 
-  // Init
-  updateDashboard();
-</script>
+      // Pie Chart
+      if (pieChart) pieChart.destroy();
+      pieChart = new Chart($('#pieChart'), {
+        type: 'pie',
+        data: {
+          labels: branches,
+          datasets: [{
+            label: 'Delivery Sales Distribution',
+            data: branchTotals.map(b => b.deliverySales),
+            backgroundColor: ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e', '#e6ab02'],
+            borderColor: ['#fff', '#fff', '#fff', '#fff', '#fff', '#fff'],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          plugins: {
+            legend: { display: true, position: 'top' },
+            title: { display: true, text: `Delivery Sales Distribution by Branch` },
+            datalabels: {
+              formatter: (value, context) => {
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                return ((value / total) * 100).toFixed(1) + '%';
+              }
+            }
+          }
+        }
+      });
+
+      // Heatmap
+      $('#heatmapContainer').html(createHeatmap(filteredData, month));
+    }
+
+    // Create heatmap
+    function createHeatmap(data, month) {
+      const days = Array.from({ length: 31 }, (_, i) => `${i + 1}`);
+      const maxSales = Math.max(...data.map(d => parseFloat(d.deliverySales) || 0), 1);
+      const heatmapData = days.map((day, i) => {
+        const date = `${month || '2025-09'}-${String(i + 1).padStart(2, '0')}`;
+        return branches.map(branch => {
+          const entry = data.find(d => d.date === date && d.outlet === branch);
+          const sales = entry ? parseFloat(entry.deliverySales) || 0 : 0;
+          const intensity = (sales / maxSales).toFixed(2);
+          return `<div class="heatmap-cell tooltip" style="background-color: rgba(215, 38, 61, ${intensity}); width: 30px; height: 30px;">
+                    <span class="tooltiptext">${branch} ${date}: ${sales.toLocaleString('en-AE', { minimumFractionDigits: 1 })} AED</span>
+                  </div>`;
+        }).join('');
+      });
+      return `
+        <div style="display: grid; grid-template-columns: repeat(${branches.length}, 30px); gap: 2px;">
+          ${branches.map(b => `<div class="small text-center">${b}</div>`).join('')}
+          ${heatmapData.map(row => row).join('')}
+        </div>
+      `;
+    }
+
+    // Update data
+    function updateData() {
+      showLoading();
+      const input = $('#dataInput').val().trim();
+      if (!input) {
+        hideLoading();
+        showNotification('Please enter data!', 'error');
+        return;
+      }
+      try {
+        const newData = input.split('\n').map(row => {
+          const [date, outlet, deliveryOrders, deliverySales] = row.split(',');
+          return {
+            date: date.trim(),
+            outlet: outlet.trim(),
+            deliveryOrders: parseInt(deliveryOrders),
+            deliverySales: parseFloat(deliverySales)
+          };
+        });
+        salesData = salesData.concat(newData);
+        updateTableAndStorage();
+        updateKpis($('#monthFilterTop').val());
+        renderBranches($('#monthFilterTop').val());
+        updateCharts($('#monthFilterTop').val());
+        hideLoading();
+        showNotification('Data updated successfully', 'success');
+      } catch (e) {
+        hideLoading();
+        showNotification('Invalid data format! Use: Date,Outlet,DeliveryOrders,DeliverySales', 'error');
+      }
+    }
+
+    // Edit and delete rows
+    function editRow(rowIndex) {
+      const row = salesData[rowIndex];
+      const newData = prompt('Enter updated data (Date,Outlet,DeliveryOrders,DeliverySales):', `${row.date},${row.outlet},${row.deliveryOrders},${row.deliverySales}`);
+      if (newData) {
+        try {
+          const [date, outlet, deliveryOrders, deliverySales] = newData.split(',');
+          salesData[rowIndex] = {
+            date: date.trim(),
+            outlet: outlet.trim(),
+            deliveryOrders: parseInt(deliveryOrders),
+            deliverySales: parseFloat(deliverySales)
+          };
+          updateTableAndStorage();
+          updateKpis($('#monthFilterTop').val());
+          renderBranches($('#monthFilterTop').val());
+          updateCharts($('#monthFilterTop').val());
+          showNotification('Row updated', 'success');
+        } catch (e) {
+          showNotification('Invalid data format!', 'error');
+        }
+      }
+    }
+
+    function deleteRow(rowIndex) {
+      if (confirm('Are you sure you want to delete this row?')) {
+        salesData.splice(rowIndex, 1);
+        updateTableAndStorage();
+        updateKpis($('#monthFilterTop').val());
+        renderBranches($('#monthFilterTop').val());
+        updateCharts($('#monthFilterTop').val());
+        showNotification('Row deleted', 'success');
+      }
+    }
+
+    function updateTableAndStorage() {
+      localStorage.setItem('salesData', JSON.stringify(salesData));
+      $('#dataTable').DataTable().clear().rows.add(salesData).draw();
+      updateLastUpdated();
+    }
+
+    function updateLastUpdated() {
+      $('#lastUpdated').text(new Date().toLocaleString('en-GB'));
+    }
+
+    // Export functions
+    function exportCSV() {
+      showLoading();
+      const headers = ['Date,Outlet,DeliveryOrders,DeliverySales'];
+      const csv = headers.concat(salesData.map(row => `${row.date},${row.outlet},${row.deliveryOrders},${row.deliverySales}`)).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'delivery_sales_data.csv';
+      a.click();
+      window.URL.revokeObjectURL(url);
+      hideLoading();
+      showNotification('CSV exported', 'success');
+    }
+
+    function exportPDF() {
+      showLoading();
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(16);
+      doc.text('Crispy Chicken Delivery Sales Report', 20, 20);
+      doc.setFontSize(12);
+      let y = 30;
+      salesData.forEach(row => {
+        doc.text(`${row.date} | ${row.outlet} | Delivery Orders: ${row.deliveryOrders} | Delivery Sales: ${row.deliverySales} AED`, 20, y);
+        y += 10;
+        if (y > 270) {
+          doc.addPage();
+          y = 20;
+        }
+      });
+      doc.save('delivery_sales_report.pdf');
+      hideLoading();
+      showNotification('PDF exported', 'success');
+    }
+
+    function exportExcel() {
+      showLoading();
+      const ws = XLSX.utils.json_to_sheet(salesData, { header: ['date', 'outlet', 'deliveryOrders', 'deliverySales'] });
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Delivery Sales Data');
+      XLSX.writeFile(wb, 'delivery_sales_data.xlsx');
+      hideLoading();
+      showNotification('Excel exported', 'success');
+    }
+
+    function resetData() {
+      if (confirm('Reset to default data? This will clear all custom entries.')) {
+        showLoading();
+        localStorage.removeItem('salesData');
+        location.reload();
+      }
+    }
+
+    // Notification and loading
+    function showNotification(message, type) {
+      const notification = $(`<div class="notification ${type}">${message}</div>`);
+      $('#notificationContainer').append(notification);
+      setTimeout(() => notification.fadeOut(300, () => notification.remove()), 3000);
+    }
+
+    function showLoading() {
+      $('#loadingOverlay').removeClass('hidden');
+    }
+
+    function hideLoading() {
+      $('#loadingOverlay').addClass('hidden');
+    }
+  </script>
 </body>
 </html>
