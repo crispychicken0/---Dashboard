@@ -623,6 +623,7 @@
             <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd" />
           </svg>
         </button>
+        <button id="languageToggle" class="px-3 py-2 card text-sm font-semibold" title="Toggle language">العربية</button>
         <button id="btnTour" class="px-3 py-2 card text-sm font-semibold" title="Take Tour">Take Tour</button>
       </div>
     </header>
@@ -809,7 +810,7 @@
       </div>
     </section>
 
-    <!-- Charts grid (removed heatmap and forecast) -->
+    <!-- Charts grid -->
     <section class="mb-6">
       <h2 class="text-lg font-semibold mb-3" style="color:var(--brand-red)">Delivery Sales Analysis</h2>
       <div class="charts-grid">
@@ -1339,6 +1340,7 @@
       $('#btnReset').on('click', resetData);
       $('#btnClearAll').on('click', clearAllData);
       $('#darkModeToggle').on('click', () => $('html').toggleClass('dark'));
+      $('#languageToggle').on('click', toggleLanguage);
       $('#btnTour').on('click', startTour);
       $('#btnSetGoals').on('click', showGoalModal);
       $('#refreshReport').on('click', () => {
@@ -1709,7 +1711,6 @@
       
       // Add table
       let y = 60;
-      doc.setFontSize(10);
       doc.text('Month', 20, y);
       doc.text('Delivery Sales (AED)', 80, y);
       doc.text('Delivery Orders', 140, y);
@@ -3048,6 +3049,23 @@
       } else {
         showNotification('No previous month data available for comparison', 'warning');
       }
+    }
+
+    // Language toggle functionality
+    function toggleLanguage() {
+      const isArabic = document.documentElement.lang === 'ar';
+      document.documentElement.lang = isArabic ? 'en' : 'ar';
+      
+      // Update text content based on language
+      if (isArabic) {
+        document.querySelector('h1').textContent = 'داشبورد كريسبي تشيكن - لوحة مبيعات التوصيل المحسنة';
+        document.querySelector('.small').textContent = 'يناير – سبتمبر 2025 &middot; معاينة في الوقت الفعلي &middot; للإدارة العليا';
+      } else {
+        document.querySelector('h1').textContent = 'Crispy Chicken — Enhanced Delivery Sales Dashboard';
+        document.querySelector('.small').textContent = 'January – September 2025 &middot; Real-time preview &middot; For top management';
+      }
+      
+      showNotification(`Language switched to ${isArabic ? 'English' : 'Arabic'}`, 'success');
     }
 
     // Add animation keyframes
