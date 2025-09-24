@@ -1,1676 +1,699 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>📊 نظام محاسبة متكامل لإدارة كريم فود</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Crispy Chicken — Exec Sales Dashboard (with Date Range, PDF & Notes)</title>
+
+  <!-- Tailwind CDN for quick styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- flatpickr for date range picker -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+  <!-- Chart.js and plugins -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+
+  <!-- DataTables -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+  <!-- html2pdf (includes html2canvas & jsPDF) for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+
   <style>
-    :root {
-      --primary-color: #2c3e50;
-      --secondary-color: #3498db;
-      --success-color: #27ae60;
-      --danger-color: #e74c3c;
-      --warning-color: #f39c12;
-      --info-color: #16a085;
-      --light-color: #ecf0f1;
-      --dark-color: #2c3e50;
-      --shadow: 0 4px 12px rgba(0,0,0,0.1);
-      --transition: all 0.3s ease;
-    }
-    
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0;
-      padding: 20px;
-      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
-      color: var(--dark-color);
-      line-height: 1.6;
-    }
-    
-    h1 {
-      text-align: center;
-      color: var(--dark-color);
-      margin-bottom: 30px;
-      font-weight: 700;
-      position: relative;
-      padding-bottom: 15px;
-    }
-    
-    h1:after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 120px;
-      height: 4px;
-      background: var(--secondary-color);
-      border-radius: 2px;
-    }
-    
-    .container {
-      background: white;
-      padding: 25px;
-      border-radius: 15px;
-      box-shadow: var(--shadow);
-      max-width: 1400px;
-      margin: auto;
-      transition: var(--transition);
-    }
-    
-    .container:hover {
-      box-shadow: 0 8px 15px rgba(0,0,0,0.15);
-    }
-    
-    .section {
-      margin-bottom: 30px;
-      padding: 20px;
-      background: #fafafa;
-      border-radius: 12px;
-      border-right: 4px solid var(--secondary-color);
-      transition: var(--transition);
-    }
-    
-    .section:hover {
-      transform: translateX(-5px);
-    }
-    
-    .section-title {
-      font-size: 1.3em;
-      color: var(--dark-color);
-      margin-bottom: 20px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .dashboard {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-      margin: 25px 0;
-    }
-    
-    .card {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: var(--shadow);
-      text-align: center;
-      transition: var(--transition);
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .card:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 8px 15px rgba(0,0,0,0.15);
-    }
-    
-    .card:before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 5px;
-    }
-    
-    .card.revenue:before { background: var(--success-color); }
-    .card.commission:before { background: var(--secondary-color); }
-    .card.discounts:before { background: var(--danger-color); }
-    .card.payout:before { background: var(--warning-color); }
-    .card.difference:before { background: var(--info-color); }
-    .card.clawbacks:before { background: #9b59b6; }
-    
-    .card h3 {
-      font-size: 0.9em;
-      color: #7f8c8d;
-      margin-bottom: 10px;
-      font-weight: 500;
-    }
-    
-    .card .value {
-      font-size: 1.8em;
-      font-weight: 700;
-      color: var(--dark-color);
-      display: block;
-      margin-bottom: 5px;
-    }
-    
-    .card .change {
-      font-size: 0.85em;
-      font-weight: 600;
-    }
-    
-    .card .change.positive {
-      color: var(--success-color);
-    }
-    
-    .card .change.negative {
-      color: var(--danger-color);
-    }
-    
-    .input-form {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 15px;
-      margin: 20px 0;
-      padding: 20px;
-      background: white;
-      border-radius: 10px;
-      box-shadow: var(--shadow);
-    }
-    
-    .form-group {
-      display: flex;
-      flex-direction: column;
-    }
-    
-    .form-group label {
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: var(--dark-color);
-    }
-    
-    .form-group input, .form-group select, .form-group textarea {
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 14px;
-      transition: var(--transition);
-    }
-    
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-      border-color: var(--secondary-color);
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-    }
-    
-    .form-group textarea {
-      resize: vertical;
-      min-height: 80px;
-    }
-    
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      background: white;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: var(--shadow);
-    }
-    
-    th, td {
-      border: 1px solid #e0e0e0;
-      padding: 12px 15px;
-      text-align: center;
-    }
-    
-    th {
-      background: var(--light-color);
-      color: var(--dark-color);
-      font-weight: 600;
-      text-transform: uppercase;
-      font-size: 0.85em;
-      letter-spacing: 0.5px;
-    }
-    
-    tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
-    
-    tr:hover {
-      background-color: #f1f1f1;
-    }
-    
-    .charts-container {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 30px;
-      margin: 30px 0;
-    }
-    
-    .chart-wrapper {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: var(--shadow);
-    }
-    
-    .chart-wrapper h3 {
-      text-align: center;
-      margin-bottom: 15px;
-      color: var(--dark-color);
-    }
-    
-    button {
-      padding: 12px 24px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      background: var(--secondary-color);
-      color: white;
-      font-size: 14px;
-      font-weight: 600;
-      margin: 8px;
-      transition: var(--transition);
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    button:hover {
-      background: var(--primary-color);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    
-    .file-upload {
-      position: relative;
-      display: inline-block;
-      cursor: pointer;
-      margin: 10px 0;
-    }
-    
-    .file-upload input[type=file] {
-      position: absolute;
-      opacity: 0;
-      width: 100%;
-      height: 100%;
-      cursor: pointer;
-    }
-    
-    .file-upload-label {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 20px;
-      background: white;
-      border: 2px dashed var(--secondary-color);
-      border-radius: 8px;
-      color: var(--secondary-color);
-      font-weight: 600;
-      transition: var(--transition);
-    }
-    
-    .file-upload:hover .file-upload-label {
-      background: rgba(52, 152, 219, 0.1);
-    }
-    
-    .tabs {
-      display: flex;
-      margin-bottom: 20px;
-      border-bottom: 2px solid var(--light-color);
-    }
-    
-    .tab {
-      padding: 12px 20px;
-      cursor: pointer;
-      font-weight: 600;
-      color: #7f8c8d;
-      transition: var(--transition);
-      border-bottom: 3px solid transparent;
-    }
-    
-    .tab.active {
-      color: var(--secondary-color);
-      border-bottom: 3px solid var(--secondary-color);
-    }
-    
-    .tab-content {
-      display: none;
-    }
-    
-    .tab-content.active {
-      display: block;
-    }
-    
-    .notification {
-      position: fixed;
-      bottom: 20px;
-      left: 20px;
-      padding: 15px 20px;
-      border-radius: 8px;
-      color: white;
-      font-weight: 600;
-      box-shadow: var(--shadow);
-      z-index: 1000;
-      transform: translateY(100px);
-      opacity: 0;
-      transition: var(--transition);
-    }
-    
-    .notification.show {
-      transform: translateY(0);
-      opacity: 1;
-    }
-    
-    .notification.success {
-      background: var(--success-color);
-    }
-    
-    .notification.error {
-      background: var(--danger-color);
-    }
-    
-    .notification.warning {
-      background: var(--warning-color);
-    }
-    
-    .export-options {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 15px;
-      margin: 30px 0;
-    }
-    
-    .export-btn {
-      padding: 12px 20px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 600;
-      transition: var(--transition);
-    }
-    
-    .export-excel {
-      background: var(--success-color);
-      color: white;
-    }
-    
-    .export-excel:hover {
-      background: #219653;
-    }
-    
-    .export-pdf {
-      background: var(--danger-color);
-      color: white;
-    }
-    
-    .export-pdf:hover {
-      background: #c0392b;
-    }
-    
-    .export-chart {
-      background: #9b59b6;
-      color: white;
-    }
-    
-    .export-chart:hover {
-      background: #8e44ad;
-    }
-    
-    .print-btn {
-      background: var(--primary-color);
-      color: white;
-    }
-    
-    .print-btn:hover {
-      background: #1a252f;
-    }
-    
-    .status-tag {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 0.8em;
-      font-weight: 600;
-    }
-    
-    .status-completed {
-      background: rgba(39, 174, 96, 0.1);
-      color: var(--success-color);
-    }
-    
-    .status-pending {
-      background: rgba(241, 196, 15, 0.1);
-      color: var(--warning-color);
-    }
-    
-    .status-overdue {
-      background: rgba(231, 76, 60, 0.1);
-      color: var(--danger-color);
-    }
-    
-    .reason-tag {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 0.8em;
-      font-weight: 600;
-      margin: 2px;
-    }
-    
-    .reason-promo {
-      background: rgba(52, 152, 219, 0.1);
-      color: var(--secondary-color);
-    }
-    
-    .reason-quality {
-      background: rgba(231, 76, 60, 0.1);
-      color: var(--danger-color);
-    }
-    
-    .reason-delivery {
-      background: rgba(241, 196, 15, 0.1);
-      color: var(--warning-color);
-    }
-    
-    .reason-other {
-      background: rgba(46, 204, 113, 0.1);
-      color: var(--success-color);
-    }
-    
-    .alert {
-      padding: 15px;
-      margin: 15px 0;
-      border-radius: 8px;
-      border-right: 4px solid;
-    }
-    
-    .alert-info {
-      background: rgba(52, 152, 219, 0.1);
-      border-color: var(--secondary-color);
-      color: var(--secondary-color);
-    }
-    
-    .alert-warning {
-      background: rgba(241, 196, 15, 0.1);
-      border-color: var(--warning-color);
-      color: var(--warning-color);
-    }
-    
-    .alert-danger {
-      background: rgba(231, 76, 60, 0.1);
-      border-color: var(--danger-color);
-      color: var(--danger-color);
-    }
-    
-    @media (max-width: 768px) {
-      .charts-container {
-        grid-template-columns: 1fr;
-      }
-      
-      .input-form {
-        grid-template-columns: 1fr;
-      }
-      
-      .export-options {
-        flex-direction: column;
-        align-items: center;
-      }
-      
-      .export-btn {
-        width: 100%;
-        max-width: 300px;
-        justify-content: center;
-      }
-    }
-    
-    @media print {
-      body {
-        background: white;
-        padding: 0;
-      }
-      
-      .container {
-        box-shadow: none;
-        padding: 0;
-      }
-      
-      .section {
-        break-inside: avoid;
-        border-right: none;
-        border-bottom: 1px solid #eee;
-      }
-      
-      button, .export-options, input[type="file"] {
-        display: none;
-      }
-    }
+    :root{
+      --brand-red: #d7263d;
+      --brand-gold: #f2b705;
+      --muted: #6b7280;
+      --card-bg: #ffffff;
+    }
+    body { background: linear-gradient(180deg,#fbfbfc 0,#f1f5f9 100%); font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; color:#0b1220; }
+    .card { background: var(--card-bg); border-radius: 12px; box-shadow: 0 6px 20px rgba(11,17,32,0.06); }
+    .kpi { min-width: 12rem; }
+    .small { font-size: 0.85rem; color:var(--muted); }
+    .badge-up { color: #166534; background: rgba(16,185,129,0.08); padding:2px 8px; border-radius:999px; font-weight:600; }
+    .badge-down { color: #7f1d1d; background: rgba(239,68,68,0.08); padding:2px 8px; border-radius:999px; font-weight:600; }
+
+    .branch-card { transition: transform .18s ease, box-shadow .18s ease; cursor:pointer; }
+    .branch-card:hover { transform: translateY(-6px); box-shadow: 0 12px 30px rgba(11,17,32,0.12); }
+    .expandable .details { display:none; }
+    .expandable.expanded .details { display:block; }
+
+    .charts-grid { display:grid; grid-template-columns: repeat(1,1fr); gap:1rem; }
+    @media (min-width: 900px) { .charts-grid { grid-template-columns: repeat(2,1fr); } }
+
+    /* DataTable override */
+    table.dataTable { width:100% !important; }
+
+    /* Classes to hide UI controls from PDF export */
+    .no-export { display: inline-block; }
+    .pdf-export .no-export { display: none !important; }
+
+    /* Slight adjustments for PDF */
+    .pdf-export .card { box-shadow: none; border: 1px solid #e8e8e8; }
+    .notes-area { width:100%; min-height:80px; border:1px solid #eee; border-radius:8px; padding:8px; resize:vertical; background:#fff; }
+    .notes-save { font-size:0.85rem; padding: 6px 10px; border-radius:6px; background:var(--brand-red); color:white; border:none; cursor:pointer; }
   </style>
 </head>
-<body>
-  <h1>📊 نظام محاسبة متكامل لإدارة كريم فود</h1>
-  <div class="container">
-    <div class="section">
-      <div class="section-title"><i class="fas fa-upload"></i> تحميل بيانات كريم فود</div>
-      <div class="file-upload">
-        <input type="file" id="careemFile" accept=".xlsx,.xls,.csv">
-        <label for="careemFile" class="file-upload-label">
-          <i class="fas fa-file-excel"></i>
-          <span>ملف أوامر كريم فود</span>
-        </label>
-      </div>
-      <div class="file-upload">
-        <input type="file" id="payoutsFile" accept=".xlsx,.xls,.csv">
-        <label for="payoutsFile" class="file-upload-label">
-          <i class="fas fa-file-excel"></i>
-          <span>ملف الدفعات الأسبوعية</span>
-        </label>
-      </div>
-      <div class="file-upload">
-        <input type="file" id="adjustmentsFile" accept=".xlsx,.xls,.csv">
-        <label for="adjustmentsFile" class="file-upload-label">
-          <i class="fas fa-file-excel"></i>
-          <span>ملف التعديلات والخصومات</span>
-        </label>
-      </div>
-      <p style="margin: 10px 0; color: #7f8c8d;">قم بتحميل ملفات كريم فود لتحليل الفروقات وحساب العمولات والخصومات</p>
-    </div>
-    
-    <div class="section">
-      <div class="section-title"><i class="fas fa-cog"></i> إعدادات النظام</div>
-      <div class="input-form">
-        <div class="form-group">
-          <label for="commissionRate">نسبة عمولة كريم فود (%):</label>
-          <input type="number" id="commissionRate" min="0" max="100" step="0.1" value="25" placeholder="مثال: 25">
-        </div>
-        
-        <div class="form-group">
-          <label for="deliveryFee">رسوم التوصيل (درهم):</label>
-          <input type="number" id="deliveryFee" min="0" step="0.1" value="7" placeholder="مثال: 7">
-        </div>
-        
-        <div class="form-group">
-          <label for="vatRate">نسبة الضريبة (%):</label>
-          <input type="number" id="vatRate" min="0" max="100" step="0.1" value="5" placeholder="مثال: 5">
-        </div>
-        
-        <div class="form-group">
-          <label for="penaltyRate">نسبة الغرامات (%):</label>
-          <input type="number" id="penaltyRate" min="0" max="100" step="0.1" value="10" placeholder="مثال: 10">
-        </div>
-        
-        <div class="form-group">
-          <label for="maxDiscountRate">أقصى نسبة خصم مقبولة (%):</label>
-          <input type="number" id="maxDiscountRate" min="0" max="100" step="0.1" value="20" placeholder="مثال: 20">
-        </div>
-        
-        <div class="form-group">
-          <label>&nbsp;</label>
-          <button onclick="saveSettings()"><i class="fas fa-save"></i> حفظ الإعدادات</button>
+<body class="p-6">
+  <!-- dashboard wrapper used by html2pdf -->
+  <div id="dashboard" class="max-w-7xl mx-auto">
+
+    <!-- HEADER -->
+    <header class="flex items-center justify-between mb-6">
+      <div class="flex items-center gap-4">
+        <!-- Change this URL to your hosted logo if different -->
+        <img src="https://crispychicken-uae.com/logo.png" alt="Crispy Chicken" style="height:64px;width:auto; border-radius:8px;" />
+        <div>
+          <h1 class="text-2xl font-bold" style="color:var(--brand-red)">Crispy Chicken — Executive Sales Dashboard</h1>
+          <div class="small">June – September 2025 · Board pack preview</div>
         </div>
       </div>
-    </div>
-    
-    <div class="section">
-      <div class="section-title"><i class="fas fa-chart-line"></i> ملخص الأداء المالي</div>
-      <div class="dashboard">
-        <div class="card revenue">
-          <h3>إجمالي الإيرادات</h3>
-          <span class="value" id="totalRevenue">0</span>
-          <span class="change positive" id="revenueChange">+0%</span>
+
+      <div class="flex items-center gap-3">
+        <div class="card px-3 py-2 flex items-center gap-3 no-export">
+          <label for="dateRange" class="small">Date range</label>
+          <input id="dateRange" type="text" placeholder="Select date range" class="p-2 border rounded text-sm" style="min-width:200px;">
         </div>
-        <div class="card commission">
-          <h3>عمولة كريم فود</h3>
-          <span class="value" id="totalCommission">0</span>
-          <span class="change negative" id="commissionChange">+0%</span>
-        </div>
-        <div class="card discounts">
-          <h3>الخصومات والعروض</h3>
-          <span class="value" id="totalDiscounts">0</span>
-          <span class="change negative" id="discountsChange">+0%</span>
-        </div>
-        <div class="card clawbacks">
-          <h3>التعويضات والغرامات</h3>
-          <span class="value" id="totalClawbacks">0</span>
-          <span class="change negative" id="clawbacksChange">+0%</span>
-        </div>
-        <div class="card payout">
-          <h3>الدفعة الصافية</h3>
-          <span class="value" id="totalPayout">0</span>
-          <span class="change positive" id="payoutChange">+0%</span>
-        </div>
-        <div class="card difference">
-          <h3>الفرق المحسوب</h3>
-          <span class="value" id="totalDifference">0</span>
-          <span class="change negative" id="differenceChange">+0%</span>
+
+        <button id="btnExportPDF" class="px-3 py-2 card text-sm font-semibold no-export" title="Export PDF">📑 Export PDF</button>
+        <button id="btnExportCSV" class="px-3 py-2 card text-sm font-semibold no-export" title="Export CSV">⬇️ Export CSV</button>
+        <button id="btnReset" class="px-3 py-2 card text-sm font-semibold no-export" title="Reset data">Reset</button>
+      </div>
+    </header>
+
+    <!-- KPI CARDS -->
+    <section class="kpi-row mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="card kpi p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="small">Total Sales</div>
+            <div id="kpiSales" class="text-2xl font-bold" style="color:var(--brand-red)">— AED</div>
+            <div class="small mt-1">Period total</div>
+          </div>
+          <div class="text-right">
+            <div class="small">Growth</div>
+            <div id="kpiSalesDelta" class="small badge-up">+0.0%</div>
+          </div>
         </div>
       </div>
-      
-      <div class="alert alert-info">
-        <i class="fas fa-info-circle"></i>
-        <strong>ملاحظة:</strong> الفرق المحسوب = الإيرادات - (العمولة + الخصومات + التعويضات + الرسوم)
-      </div>
-    </div>
-    
-    <div class="section">
-      <div class="section-title"><i class="fas fa-balance-scale"></i> تحليل الفروقات والأسباب</div>
-      <div class="tabs">
-        <div class="tab active" onclick="openTab(event, 'dailyAnalysisTab')">التحليل اليومي</div>
-        <div class="tab" onclick="openTab(event, 'weeklyAnalysisTab')">التحليل الأسبوعي</div>
-        <div class="tab" onclick="openTab(event, 'reasonsAnalysisTab')">أسباب الفروقات</div>
-      </div>
-      
-      <div id="dailyAnalysisTab" class="tab-content active">
-        <input type="text" id="dailySearch" placeholder="🔍 بحث..." onkeyup="filterTable('dailyTable', this.value)">
-        <table id="dailyTable">
-          <thead>
-            <tr>
-              <th>التاريخ</th>
-              <th>عدد الأوامر</th>
-              <th>الإيرادات</th>
-              <th>العمولة</th>
-              <th>الخصومات</th>
-              <th>التعويضات</th>
-              <th>الدفعة</th>
-              <th>الفرق</th>
-              <th>نسبة الفرق</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      
-      <div id="weeklyAnalysisTab" class="tab-content">
-        <input type="text" id="weeklySearch" placeholder="🔍 بحث..." onkeyup="filterTable('weeklyTable', this.value)">
-        <table id="weeklyTable">
-          <thead>
-            <tr>
-              <th>الأسبوع</th>
-              <th>عدد الأوامر</th>
-              <th>الإيرادات</th>
-              <th>العمولة</th>
-              <th>الخصومات</th>
-              <th>التعويضات</th>
-              <th>الدفعة</th>
-              <th>الفرق</th>
-              <th>نسبة الفرق</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      
-      <div id="reasonsAnalysisTab" class="tab-content">
-        <input type="text" id="reasonsSearch" placeholder="🔍 بحث..." onkeyup="filterTable('reasonsTable', this.value)">
-        <table id="reasonsTable">
-          <thead>
-            <tr>
-              <th>سبب الفرق</th>
-              <th>العدد</th>
-              <th>إجمالي المبلغ</th>
-              <th>نسبة من الإيرادات</th>
-              <th>متوسط المبلغ</th>
-              <th>الحالة</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-    
-    <div class="section">
-      <div class="section-title"><i class="fas fa-chart-bar"></i> الرسوم البيانية التحليلية</div>
-      <div class="charts-container">
-        <div class="chart-wrapper">
-          <h3>تطور الإيرادات والفروقات</h3>
-          <canvas id="revenueVsDifferenceChart" height="140"></canvas>
-        </div>
-        <div class="chart-wrapper">
-          <h3>توزيع الخصومات والتعويضات</h3>
-          <canvas id="deductionsDistributionChart" height="140"></canvas>
-        </div>
-        <div class="chart-wrapper">
-          <h3>أسباب الفروقات</h3>
-          <canvas id="reasonsChart" height="140"></canvas>
-        </div>
-        <div class="chart-wrapper">
-          <h3>مقارنة الفترات</h3>
-          <canvas id="periodComparisonChart" height="140"></canvas>
+
+      <div class="card kpi p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="small">Total Orders</div>
+            <div id="kpiOrders" class="text-2xl font-bold">—</div>
+            <div class="small mt-1">Period total</div>
+          </div>
+          <div class="text-right">
+            <div class="small">Avg Order Value</div>
+            <div id="kpiAOV" class="small">— AED</div>
+          </div>
         </div>
       </div>
-    </div>
-    
-    <div class="section">
-      <div class="section-title"><i class="fas fa-exclamation-triangle"></i> التنبيهات والتوصيات</div>
-      <div id="alertsContainer">
-        <div class="alert alert-warning">
-          <i class="fas fa-exclamation-triangle"></i>
-          <strong>تنبيه:</strong> نسبة الخصومات الحالية (18%) تقترب من الحد الأقصى المسموح (20%)
-        </div>
-        <div class="alert alert-danger">
-          <i class="fas fa-exclamation-circle"></i>
-          <strong>خطر:</strong> هناك 5 أوامر بتعويضات عالية تتطلب مراجعة فورية
-        </div>
-        <div class="alert alert-info">
-          <i class="fas fa-lightbulb"></i>
-          <strong>توصية:</strong>可以考虑协商降低佣金比例或优化促销策略以减少差异
+
+      <div class="card kpi p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="small">Delivery % of Sales</div>
+            <div id="kpiDeliveryShare" class="text-2xl font-bold">— %</div>
+            <div class="small mt-1">Delivery contribution</div>
+          </div>
+          <div class="text-right">
+            <div class="small">Delivery Orders</div>
+            <div id="kpiDeliveryOrders" class="small">—</div>
+          </div>
         </div>
       </div>
-    </div>
-    
-    <div class="export-options">
-      <button class="export-btn export-excel" onclick="exportExcel()">
-        <i class="fas fa-file-excel"></i> تصدير Excel
-      </button>
-      <button class="export-btn export-pdf" onclick="exportPDF()">
-        <i class="fas fa-file-pdf"></i> تصدير PDF
-      </button>
-      <button class="export-btn export-chart" onclick="exportCharts()">
-        <i class="fas fa-chart-pie"></i> تصدير الرسوم البيانية
-      </button>
-      <button class="export-btn print-btn" onclick="window.print()">
-        <i class="fas fa-print"></i> طباعة التقرير
-      </button>
-    </div>
+
+      <div class="card kpi p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="small">Top Branch</div>
+            <div id="kpiTopBranch" class="text-2xl font-bold" style="color:var(--brand-gold)">—</div>
+            <div class="small mt-1">By sales</div>
+          </div>
+          <div class="text-right">
+            <div class="small">Best Day</div>
+            <div id="kpiPeakDay" class="small">—</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Branch Performance Cards -->
+    <section class="mb-6">
+      <h2 class="text-lg font-semibold mb-3" style="color:var(--brand-red)">Branch Performance</h2>
+      <div id="branches" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- Charts grid -->
+    <section class="mb-6">
+      <h2 class="text-lg font-semibold mb-3" style="color:var(--brand-red)">Sales Analysis</h2>
+      <div class="charts-grid">
+        <div class="card p-4">
+          <h3 class="font-semibold mb-2">Total Sales by Branch</h3>
+          <canvas id="barChart" height="220"></canvas>
+        </div>
+
+        <div class="card p-4">
+          <h3 class="font-semibold mb-2">Daily Sales Trend</h3>
+          <canvas id="lineChart" height="220"></canvas>
+        </div>
+
+        <div class="card p-4">
+          <h3 class="font-semibold mb-2">Sales Distribution</h3>
+          <canvas id="pieChart" height="220"></canvas>
+        </div>
+
+        <div class="card p-4">
+          <h3 class="font-semibold mb-2">Delivery Sales Heatmap (by day)</h3>
+          <canvas id="heatmapChart" height="220"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Data Input and Table -->
+    <section class="mb-6">
+      <div class="flex flex-col lg:flex-row gap-4">
+        <div class="card p-4 flex-1">
+          <h3 class="font-semibold mb-2">Quick Data Input</h3>
+          <textarea id="dataInput" class="w-full h-28 p-2 border rounded mb-2" placeholder="Paste CSV rows: Date,Outlet,Orders,Sales,DeliveryOrders,DeliverySales"></textarea>
+          <div class="flex gap-2">
+            <button id="btnUpdate" class="px-3 py-2 bg-red-600 text-white rounded no-export">Update Data</button>
+            <button id="btnClearInput" class="px-3 py-2 border rounded no-export">Clear</button>
+            <div class="small self-center ml-auto text-gray-500">Tip: Use YYYY-MM-DD dates</div>
+          </div>
+        </div>
+
+        <div class="card p-4 flex-1">
+          <h3 class="font-semibold mb-2">Raw Data (drill-down)</h3>
+          <table id="dataTable" class="display w-full">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Outlet</th>
+                <th>Orders</th>
+                <th>Sales (AED)</th>
+                <th>Delivery Orders</th>
+                <th>Delivery Sales (AED)</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <footer class="text-sm text-gray-500 mt-6">
+      Last updated: <span id="lastUpdated">—</span> · Prepared for Top Management — Crispy Chicken
+    </footer>
   </div>
-  
-  <div id="notification" class="notification"></div>
-  
+
+  <!-- SCRIPT -->
   <script>
-    // System settings
-    let systemSettings = {
-      commissionRate: 25,
-      deliveryFee: 7,
-      vatRate: 5,
-      penaltyRate: 10,
-      maxDiscountRate: 20
+    // Register Chart plugins
+    Chart.register(ChartDataLabels, window.ChartAnnotationPlugin || { id: 'annotation' });
+
+    // Branch names (keeps your structure)
+    const branches = ['Hamdan','Shabiya','Khalidiyah','Muroor','Barsha','Satwa'];
+
+    // Provided totals for Sep 2025 (as before)
+    const totals = {
+      'Hamdan': { orders: 1955, sales: 87291.6, deliveryOrders: 983, deliverySales: 43645.9 },
+      'Shabiya': { orders: 1124, sales: 52819.6, deliveryOrders: 567, deliverySales: 26410.0 },
+      'Khalidiyah': { orders: 1004, sales: 48640.5, deliveryOrders: 508, deliverySales: 24320.5 },
+      'Muroor': { orders: 921, sales: 45196.4, deliveryOrders: 466, deliverySales: 22598.4 },
+      'Barsha': { orders: 763, sales: 37618.7, deliveryOrders: 387, deliverySales: 18809.4 },
+      'Satwa': { orders: 426, sales: 20079.0, deliveryOrders: 219, deliverySales: 10039.5 }
     };
-    
-    // Data structure for Careem Food analysis
-    let careemData = {
-      orders: [],
-      payouts: [],
-      adjustments: [],
-      dailyAnalysis: [],
-      weeklyAnalysis: [],
-      reasonsAnalysis: []
-    };
-    
-    // Chart instances
-    let revenueVsDifferenceChartInstance = null;
-    let deductionsDistributionChartInstance = null;
-    let reasonsChartInstance = null;
-    let periodComparisonChartInstance = null;
-    
-    // Initialize sample data
-    function initializeSampleData() {
-      // Sample orders data
-      careemData.orders = [
-        { id: "ORD001", date: "2025-09-01", customer: "أحمد محمد", amount: 120, discount: 20, commission: 30, status: "completed" },
-        { id: "ORD002", date: "2025-09-01", customer: "فاطمة علي", amount: 85, discount: 15, commission: 21.25, status: "completed" },
-        { id: "ORD003", date: "2025-09-02", customer: "محمد سعيد", amount: 95, discount: 10, commission: 23.75, status: "completed" },
-        { id: "ORD004", date: "2025-09-02", customer: "خالد عبدالله", amount: 110, discount: 25, commission: 27.5, status: "completed" },
-        { id: "ORD005", date: "2025-09-03", customer: "نورة سالم", amount: 75, discount: 5, commission: 18.75, status: "completed" },
-        { id: "ORD006", date: "2025-09-03", customer: "سارة أحمد", amount: 130, discount: 30, commission: 32.5, status: "completed" },
-        { id: "ORD007", date: "2025-09-04", customer: "عبدالله محمد", amount: 90, discount: 15, commission: 22.5, status: "completed" },
-        { id: "ORD008", date: "2025-09-04", customer: "مريم خالد", amount: 105, discount: 20, commission: 26.25, status: "completed" },
-        { id: "ORD009", date: "2025-09-05", customer: "يوسف علي", amount: 80, discount: 10, commission: 20, status: "completed" },
-        { id: "ORD010", date: "2025-09-05", customer: "ليلى أحمد", amount: 125, discount: 25, commission: 31.25, status: "completed" }
-      ];
-      
-      // Sample adjustments data
-      careemData.adjustments = [
-        { id: "ADJ001", date: "2025-09-02", orderID: "ORD001", amount: -15, reason: "quality", description: "مشاكل في الجودة", type: "clawback" },
-        { id: "ADJ002", date: "2025-09-03", orderID: "ORD003", amount: -10, reason: "delivery", description: "تأخير في التوصيل", type: "clawback" },
-        { id: "ADJ003", date: "2025-09-04", orderID: "ORD005", amount: -5, reason: "wrong", description: "طلب خاطئ", type: "clawback" },
-        { id: "ADJ004", date: "2025-09-05", orderID: "ORD007", amount: -8, reason: "promo", description: "خصم ترويجي", type: "discount" },
-        { id: "ADJ005", date: "2025-09-06", orderID: "ORD009", amount: -12, reason: "quality", description: "مشاكل في الجودة", type: "clawback" }
-      ];
-      
-      // Sample payouts data
-      careemData.payouts = [
-        { id: "PAYOUT001", date: "2025-09-08", amount: 450, period: "2025-09-01 to 2025-09-07", status: "completed" },
-        { id: "PAYOUT002", date: "2025-09-15", amount: 520, period: "2025-09-08 to 2025-09-14", status: "pending" }
-      ];
-      
-      // Process data for analysis
-      processDataForAnalysis();
-    }
-    
-    // Process data for analysis
-    function processDataForAnalysis() {
-      // Group orders by date
-      const dailyData = {};
-      careemData.orders.forEach(order => {
-        if (!dailyData[order.date]) {
-          dailyData[order.date] = {
-            orders: [],
-            revenue: 0,
-            commission: 0,
-            discounts: 0,
-            clawbacks: 0
-          };
+
+    // Build salesData: Sep 1-24 (accurate totals) + dummy Jun-Aug
+    let salesData = [];
+    (function createSepData(){
+      // push daily approximations for Sep 1..24
+      for (let day=1; day<=24; day++){
+        const date = `2025-09-${String(day).padStart(2,'0')}`;
+        branches.forEach(branch=>{
+          const dailyOrders = Math.round(totals[branch].orders / 24);
+          const dailySales = parseFloat((totals[branch].sales / 24).toFixed(1));
+          const dailyDelOrders = Math.round(totals[branch].deliveryOrders / 24);
+          const dailyDelSales = parseFloat((totals[branch].deliverySales / 24).toFixed(1));
+          salesData.push({ date, outlet: branch, count: dailyOrders, total: dailySales, deliveryOrders: dailyDelOrders, deliverySales: dailyDelSales });
+        });
+      }
+      // adjust last occurrence for each branch (so totals exactly match)
+      branches.forEach(branch=>{
+        // find last index for this branch in Sep
+        let lastIdx = -1;
+        for (let i = salesData.length - 1; i >= 0; i--) {
+          if (salesData[i].outlet === branch && salesData[i].date.startsWith('2025-09-')) { lastIdx = i; break; }
         }
-        dailyData[order.date].orders.push(order);
-        dailyData[order.date].revenue += order.amount;
-        dailyData[order.date].commission += order.commission;
-        dailyData[order.date].discounts += order.discount;
-      });
-      
-      // Add clawbacks to daily data
-      careemData.adjustments.forEach(adj => {
-        if (dailyData[adj.date]) {
-          dailyData[adj.date].clawbacks += Math.abs(adj.amount);
+        if (lastIdx >= 0) {
+          const branchRows = salesData.filter(r => r.outlet === branch && r.date.startsWith('2025-09-'));
+          const sumOrders = branchRows.reduce((s,r)=>s+r.count,0);
+          const sumSales  = branchRows.reduce((s,r)=>s+r.total,0);
+          const sumDOrders = branchRows.reduce((s,r)=>s+r.deliveryOrders,0);
+          const sumDSales = branchRows.reduce((s,r)=>s+r.deliverySales,0);
+          salesData[lastIdx].count += totals[branch].orders - sumOrders;
+          salesData[lastIdx].total = parseFloat((salesData[lastIdx].total + (totals[branch].sales - sumSales)).toFixed(1));
+          salesData[lastIdx].deliveryOrders += totals[branch].deliveryOrders - sumDOrders;
+          salesData[lastIdx].deliverySales = parseFloat((salesData[lastIdx].deliverySales + (totals[branch].deliverySales - sumDSales)).toFixed(1));
         }
-      });
-      
-      // Create daily analysis
-      careemData.dailyAnalysis = Object.keys(dailyData).map(date => {
-        const data = dailyData[date];
-        const totalDeductions = data.commission + data.discounts + data.clawbacks;
-        const payout = data.revenue - totalDeductions;
-        const difference = data.revenue - payout;
-        const differenceRate = data.revenue > 0 ? (difference / data.revenue * 100).toFixed(2) : 0;
-        
-        return {
-          date: date,
-          orderCount: data.orders.length,
-          revenue: data.revenue,
-          commission: data.commission,
-          discounts: data.discounts,
-          clawbacks: data.clawbacks,
-          payout: payout,
-          difference: difference,
-          differenceRate: differenceRate
-        };
-      });
-      
-      // Create weekly analysis
-      const weeklyData = {};
-      careemData.dailyAnalysis.forEach(day => {
-        const week = getWeekNumber(day.date);
-        if (!weeklyData[week]) {
-          weeklyData[week] = {
-            orders: [],
-            revenue: 0,
-            commission: 0,
-            discounts: 0,
-            clawbacks: 0
-          };
-        }
-        weeklyData[week].orders.push(day);
-        weeklyData[week].revenue += day.revenue;
-        weeklyData[week].commission += day.commission;
-        weeklyData[week].discounts += day.discounts;
-        weeklyData[week].clawbacks += day.clawbacks;
-      });
-      
-      careemData.weeklyAnalysis = Object.keys(weeklyData).map(week => {
-        const data = weeklyData[week];
-        const totalDeductions = data.commission + data.discounts + data.clawbacks;
-        const payout = data.revenue - totalDeductions;
-        const difference = data.revenue - payout;
-        const differenceRate = data.revenue > 0 ? (difference / data.revenue * 100).toFixed(2) : 0;
-        
-        return {
-          week: week,
-          orderCount: data.orders.reduce((sum, day) => sum + day.orderCount, 0),
-          revenue: data.revenue,
-          commission: data.commission,
-          discounts: data.discounts,
-          clawbacks: data.clawbacks,
-          payout: payout,
-          difference: difference,
-          differenceRate: differenceRate
-        };
-      });
-      
-      // Create reasons analysis
-      const reasonsData = {};
-      careemData.adjustments.forEach(adj => {
-        if (!reasonsData[adj.reason]) {
-          reasonsData[adj.reason] = {
-            count: 0,
-            totalAmount: 0,
-            type: adj.type
-          };
-        }
-        reasonsData[adj.reason].count++;
-        reasonsData[adj.reason].totalAmount += Math.abs(adj.amount);
-      });
-      
-      careemData.reasonsAnalysis = Object.keys(reasonsData).map(reason => {
-        const data = reasonsData[reason];
-        const totalRevenue = careemData.orders.reduce((sum, order) => sum + order.amount, 0);
-        const revenuePercentage = totalRevenue > 0 ? (data.totalAmount / totalRevenue * 100).toFixed(2) : 0;
-        const averageAmount = data.count > 0 ? (data.totalAmount / data.count).toFixed(2) : 0;
-        
-        return {
-          reason: getReasonText(reason),
-          count: data.count,
-          totalAmount: data.totalAmount,
-          revenuePercentage: revenuePercentage,
-          averageAmount: averageAmount,
-          type: data.type,
-          status: data.totalAmount > 100 ? "مراجعة" : "طبيعي"
-        };
-      });
-    }
-    
-    // Get week number
-    function getWeekNumber(dateString) {
-      const date = new Date(dateString);
-      const startOfYear = new Date(date.getFullYear(), 0, 1);
-      const days = Math.floor((date - startOfYear) / (24 * 60 * 60 * 1000));
-      return Math.ceil((days + startOfYear.getDay() + 1) / 7);
-    }
-    
-    // Get reason text
-    function getReasonText(reason) {
-      const reasons = {
-        'quality': 'مشاكل في الجودة',
-        'delivery': 'تأخير في التوصيل',
-        'wrong': 'طلب خاطئ',
-        'promo': 'خصم ترويجي',
-        'other': 'سبب آخر'
+      }
+    })();
+
+    // function to generate dummy month blocks (same approach as earlier)
+    function generateDummyData(month, days){
+      const monthlyTotals = {
+        '2025-06': [ {orders:1400,sales:56000,deliveryOrders:700,deliverySales:28000}, {orders:850,sales:34000,deliveryOrders:425,deliverySales:17000}, {orders:750,sales:33000,deliveryOrders:375,deliverySales:16500}, {orders:700,sales:30000,deliveryOrders:350,deliverySales:15000}, {orders:550,sales:20000,deliveryOrders:275,deliverySales:10000}, {orders:130,sales:5000,deliveryOrders:65,deliverySales:2500} ],
+        '2025-07': [ {orders:1450,sales:58000,deliveryOrders:725,deliverySales:29000}, {orders:880,sales:35200,deliveryOrders:440,deliverySales:17600}, {orders:780,sales:34320,deliveryOrders:390,deliverySales:17160}, {orders:720,sales:31680,deliveryOrders:360,deliverySales:15840}, {orders:570,sales:21660,deliveryOrders:285,deliverySales:10830}, {orders:140,sales:5600,deliveryOrders:70,deliverySales:2800} ],
+        '2025-08': [ {orders:1500,sales:60000,deliveryOrders:750,deliverySales:30000}, {orders:900,sales:36000,deliveryOrders:450,deliverySales:18000}, {orders:800,sales:35200,deliveryOrders:400,deliverySales:17600}, {orders:740,sales:32560,deliveryOrders:370,deliverySales:16280}, {orders:590,sales:22420,deliveryOrders:295,deliverySales:11210}, {orders:145,sales:5800,deliveryOrders:73,deliverySales:2900} ]
       };
-      return reasons[reason] || reason;
-    }
-    
-    // Initialize the application
-    document.addEventListener('DOMContentLoaded', function() {
-      initializeSampleData();
-      updateDashboard();
-      renderTables();
-      renderCharts();
-      updateAlerts();
-    });
-    
-    // Update dashboard
-    function updateDashboard() {
-      const totalRevenue = careemData.orders.reduce((sum, order) => sum + order.amount, 0);
-      const totalCommission = careemData.orders.reduce((sum, order) => sum + order.commission, 0);
-      const totalDiscounts = careemData.orders.reduce((sum, order) => sum + order.discount, 0);
-      const totalClawbacks = careemData.adjustments.reduce((sum, adj) => sum + Math.abs(adj.amount), 0);
-      const totalPayout = careemData.payouts.reduce((sum, payout) => sum + payout.amount, 0);
-      const totalDifference = totalRevenue - totalPayout;
-      
-      document.getElementById('totalRevenue').textContent = formatCurrency(totalRevenue);
-      document.getElementById('totalCommission').textContent = formatCurrency(totalCommission);
-      document.getElementById('totalDiscounts').textContent = formatCurrency(totalDiscounts);
-      document.getElementById('totalClawbacks').textContent = formatCurrency(totalClawbacks);
-      document.getElementById('totalPayout').textContent = formatCurrency(totalPayout);
-      document.getElementById('totalDifference').textContent = formatCurrency(totalDifference);
-      
-      // Calculate changes (using dummy data for demonstration)
-      document.getElementById('revenueChange').textContent = '+12.5%';
-      document.getElementById('commissionChange').textContent = '+8.3%';
-      document.getElementById('discountsChange').textContent = '+15.7%';
-      document.getElementById('clawbacksChange').textContent = '+22.1%';
-      document.getElementById('payoutChange').textContent = '+9.8%';
-      document.getElementById('differenceChange').textContent = '+18.2%';
-    }
-    
-    // Render tables
-    function renderTables() {
-      renderDailyTable();
-      renderWeeklyTable();
-      renderReasonsTable();
-    }
-    
-    // Render daily table
-    function renderDailyTable() {
-      const tbody = document.querySelector('#dailyTable tbody');
-      tbody.innerHTML = '';
-      
-      careemData.dailyAnalysis.forEach(day => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${day.date}</td>
-          <td>${day.orderCount}</td>
-          <td>${formatCurrency(day.revenue)}</td>
-          <td>${formatCurrency(day.commission)}</td>
-          <td>${formatCurrency(day.discounts)}</td>
-          <td>${formatCurrency(day.clawbacks)}</td>
-          <td>${formatCurrency(day.payout)}</td>
-          <td class="${day.difference > 0 ? 'negative' : 'positive'}">${formatCurrency(day.difference)}</td>
-          <td class="${day.differenceRate > 20 ? 'danger' : 'warning'}">${day.differenceRate}%</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-    
-    // Render weekly table
-    function renderWeeklyTable() {
-      const tbody = document.querySelector('#weeklyTable tbody');
-      tbody.innerHTML = '';
-      
-      careemData.weeklyAnalysis.forEach(week => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>الأسبوع ${week.week}</td>
-          <td>${week.orderCount}</td>
-          <td>${formatCurrency(week.revenue)}</td>
-          <td>${formatCurrency(week.commission)}</td>
-          <td>${formatCurrency(week.discounts)}</td>
-          <td>${formatCurrency(week.clawbacks)}</td>
-          <td>${formatCurrency(week.payout)}</td>
-          <td class="${week.difference > 0 ? 'negative' : 'positive'}">${formatCurrency(week.difference)}</td>
-          <td class="${week.differenceRate > 20 ? 'danger' : 'warning'}">${week.differenceRate}%</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-    
-    // Render reasons table
-    function renderReasonsTable() {
-      const tbody = document.querySelector('#reasonsTable tbody');
-      tbody.innerHTML = '';
-      
-      careemData.reasonsAnalysis.forEach(reason => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td><span class="reason-tag reason-${reason.type}">${reason.reason}</span></td>
-          <td>${reason.count}</td>
-          <td>${formatCurrency(reason.totalAmount)}</td>
-          <td>${reason.revenuePercentage}%</td>
-          <td>${formatCurrency(reason.averageAmount)}</td>
-          <td><span class="status-tag status-${reason.status === 'مراجعة' ? 'overdue' : 'completed'}">${reason.status}</span></td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-    
-    // Render charts
-    function renderCharts() {
-      renderRevenueVsDifferenceChart();
-      renderDeductionsDistributionChart();
-      renderReasonsChart();
-      renderPeriodComparisonChart();
-    }
-    
-    // Render revenue vs difference chart
-    function renderRevenueVsDifferenceChart() {
-      const ctx = document.getElementById('revenueVsDifferenceChart').getContext('2d');
-      
-      if (revenueVsDifferenceChartInstance) {
-        revenueVsDifferenceChartInstance.destroy();
+      const arr=[];
+      for (let d=1; d<=days; d++){
+        const date = `${month}-${String(d).padStart(2,'0')}`;
+        branches.forEach((br,i)=>{
+          arr.push({
+            date, outlet: br,
+            count: Math.round(monthlyTotals[month][i].orders / days),
+            total: parseFloat((monthlyTotals[month][i].sales / days).toFixed(1)),
+            deliveryOrders: Math.round(monthlyTotals[month][i].deliveryOrders / days),
+            deliverySales: parseFloat((monthlyTotals[month][i].deliverySales / days).toFixed(1))
+          });
+        });
       }
-      
-      const labels = careemData.dailyAnalysis.map(d => d.date);
-      const revenue = careemData.dailyAnalysis.map(d => d.revenue);
-      const difference = careemData.dailyAnalysis.map(d => d.difference);
-      
-      revenueVsDifferenceChartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'الإيرادات',
-              data: revenue,
-              borderColor: '#27ae60',
-              backgroundColor: 'rgba(39, 174, 96, 0.1)',
-              tension: 0.3,
-              fill: true
-            },
-            {
-              label: 'الفرق',
-              data: difference,
-              borderColor: '#e74c3c',
-              backgroundColor: 'rgba(231, 76, 60, 0.1)',
-              tension:  ️0.3,
-              fill: true
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              position: 'top',
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  let label = context.dataset.label || '';
-                  if (label) {
-                    label += ': ';
-                  }
-                  if (context.parsed.y !== null) {
-                    label += formatCurrency(context.parsed.y);
-                  }
-                  return label;
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                callback: function(value) {
-                  return formatCurrency(value, true);
-                }
-              }
-            }
-          }
-        }
-      });
+      return arr;
     }
-    
-    // Render deductions distribution chart
-    function renderDeductionsDistributionChart() {
-      const ctx = document.getElementById('deductionsDistributionChart').getContext('2d');
-      
-      if (deductionsDistributionChartInstance) {
-        deductionsDistributionChartInstance.destroy();
-      }
-      
-      const totalCommission = careemData.orders.reduce((sum, order) => sum + order.commission, 0);
-      const totalDiscounts = careemData.orders.reduce((sum, order) => sum + order.discount, 0);
-      const totalClawbacks = careemData.adjustments.reduce((sum, adj) => sum + Math.abs(adj.amount), 0);
-      
-      deductionsDistributionChartInstance = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: ['العمولة', 'الخصومات', 'التعويضات'],
-          datasets: [{
-            data: [totalCommission, totalDiscounts, totalClawbacks],
-            backgroundColor: ['#3498db', '#e74c3c', '#9b59b6']
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              position: 'bottom',
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  let label = context.label || '';
-                  if (label) {
-                    label += ': ';
-                  }
-                  if (context.parsed !== null) {
-                    const value = context.parsed;
-                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                    const percentage = Math.round((value / total) * 100);
-                    label += formatCurrency(value);
-                    label += ` (${percentage}%)`;
-                  }
-                  return label;
-                }
-              }
-            }
-          }
-        }
-      });
+
+    // append dummy months
+    salesData = salesData.concat(generateDummyData('2025-06',30));
+    salesData = salesData.concat(generateDummyData('2025-07',31));
+    salesData = salesData.concat(generateDummyData('2025-08',31));
+
+    // restore from localStorage if user previously edited data
+    const saved = localStorage.getItem('salesData');
+    if (saved) {
+      try { salesData = JSON.parse(saved); } catch(e) { /* ignore parse error */ }
     }
-    
-    // Render reasons chart
-    function renderReasonsChart() {
-      const ctx = document.getElementById('reasonsChart').getContext('2d');
-      
-      if (reasonsChartInstance) {
-        reasonsChartInstance.destroy();
-      }
-      
-      const labels = careemData.reasonsAnalysis.map(r => r.reason);
-      const data = careemData.reasonsAnalysis.map(r => r.totalAmount);
-      
-      reasonsChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'المبلغ',
-            data: data,
-            backgroundColor: careemData.reasonsAnalysis.map(r => 
-              r.type === 'clawback' ? '#e74c3c' : '#f39c12'
-            )
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              display: false
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  const reason = careemData.reasonsAnalysis[context.dataIndex];
-                  return [
-                    `المبلغ: ${formatCurrency(context.parsed.y)}`,
-                    `العدد: ${reason.count}`,
-                    `المتوسط: ${formatCurrency(reason.averageAmount)}`
-                  ];
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                callback: function(value) {
-                  return formatCurrency(value, true);
-                }
-              }
-            }
-          }
-        }
-      });
+
+    // global date filter (YYYY-MM-DD strings)
+    let dateFilterStart = null;
+    let dateFilterEnd = null;
+
+    // DataTable ref and Chart refs
+    let dataTable;
+    let barChart, lineChart, pieChart, heatmapChart;
+
+    // UTILITIES
+    function formatAED(v){ return Number(v || 0).toLocaleString('en-AE', { maximumFractionDigits:1, minimumFractionDigits: 1 }) + ' AED'; }
+    function formatNumber(v){ return Number(v || 0).toLocaleString('en-AE'); }
+    function lastUpdatedText(){ document.getElementById('lastUpdated').textContent = new Date().toLocaleString('en-GB'); }
+
+    // KPIs
+    function calculateKPIs(filtered){
+      const totalSales = filtered.reduce((s,r)=>s+(r.total||0),0);
+      const totalOrders = filtered.reduce((s,r)=>s+(r.count||0),0);
+      const deliverySales = filtered.reduce((s,r)=>s+(r.deliverySales||0),0);
+      const deliveryOrders = filtered.reduce((s,r)=>s+(r.deliveryOrders||0),0);
+      const aov = totalOrders ? totalSales/totalOrders : 0;
+      const byBranch = {};
+      filtered.forEach(r => { byBranch[r.outlet] = (byBranch[r.outlet]||0) + (r.total||0); });
+      const topBranch = Object.entries(byBranch).sort((a,b)=>b[1]-a[1])[0] || ['—',0];
+      const byDate = {};
+      filtered.forEach(r=>{ byDate[r.date] = (byDate[r.date]||0) + (r.total||0); });
+      const peak = Object.entries(byDate).sort((a,b)=>b[1]-a[1])[0] || ['—',0];
+      return {
+        totalSales, totalOrders, deliverySales, deliveryOrders, aov,
+        topBranch: topBranch[0], topBranchSales: topBranch[1],
+        peakDate: peak[0], peakValue: peak[1]
+      };
     }
-    
-    // Render period comparison chart
-    function renderPeriodComparisonChart() {
-      const ctx = document.getElementById('periodComparisonChart').getContext('2d');
-      
-      if (periodComparisonChartInstance) {
-        periodComparisonChartInstance.destroy();
-      }
-      
-      // Sample data for comparison
-      periodComparisonChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: ['الأسبوع الحالي', 'الأسبوع السابق', 'متوسط الشهر'],
-          datasets: [
-            {
-              label: 'الإيرادات',
-              data: [1200, 1100, 1150],
-              backgroundColor: '#27ae60'
-            },
-            {
-              label: 'الخصومات',
-              data: [300, 250, 275],
-              backgroundColor: '#e74c3c'
-            },
-            {
-              label: 'التعويضات',
-              data: [150, 120, 135],
-              backgroundColor: '#9b59b6'
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              position: 'top',
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  let label = context.dataset.label || '';
-                  if (label) {
-                    label += ': ';
-                  }
-                  if (context.parsed.y !== null) {
-                    label += formatCurrency(context.parsed.y);
-                  }
-                  return label;
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                callback: function(value) {
-                  return formatCurrency(value, true);
-                }
-              }
-            }
-          }
-        }
+
+    // Render branch cards (with notes)
+    function renderBranchCards(){
+      const container = document.getElementById('branches');
+      const filtered = filterByDate(salesData);
+      const metrics = branches.map(branch => {
+        const rows = filtered.filter(d=>d.outlet===branch);
+        const totalOrders = rows.reduce((s,r)=>s+(r.count||0),0);
+        const totalSales = rows.reduce((s,r)=>s+(r.total||0),0);
+        const delOrders = rows.reduce((s,r)=>s+(r.deliveryOrders||0),0);
+        const delSales = rows.reduce((s,r)=>s+(r.deliverySales||0),0);
+        const avg = totalOrders ? (totalSales/totalOrders).toFixed(1) : 0;
+        return { branch, totalOrders, totalSales, delOrders, delSales, avg };
       });
-    }
-    
-    // Update alerts
-    function updateAlerts() {
-      const totalRevenue = careemData.orders.reduce((sum, order) => sum + order.amount, 0);
-      const totalDiscounts = careemData.orders.reduce((sum, order) => sum + order.discount, 0);
-      const discountRate = totalRevenue > 0 ? (totalDiscounts / totalRevenue * 100) : 0;
-      
-      const highClawbacks = careemData.adjustments.filter(adj => Math.abs(adj.amount) > 10);
-      
-      let alertsHTML = '';
-      
-      if (discountRate > systemSettings.maxDiscountRate) {
-        alertsHTML += `
-          <div class="alert alert-warning">
-            <i class="fas fa-exclamation-triangle"></i>
-            <strong>تنبيه:</strong> نسبة الخصومات الحالية (${discountRate.toFixed(1)}%) تقترب من الحد الأقصى المسموح (${systemSettings.maxDiscountRate}%)
+
+      container.innerHTML = metrics.map(m=>`
+        <div class="branch-card card p-4 expandable" data-branch="${m.branch}">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h4 class="font-semibold text-lg" style="color:var(--brand-red)">${m.branch}</h4>
+              <div class="small text-gray-500">${formatNumber(m.totalOrders)} Orders · ${formatAED(m.totalSales)}</div>
+            </div>
+            <div class="text-right">
+              <div class="small">Delivery</div>
+              <div class="font-semibold">${formatNumber(m.delOrders)} · ${formatAED(m.delSales)}</div>
+              <div class="small mt-1">Avg ${m.avg} AED</div>
+            </div>
           </div>
-        `;
-      }
-      
-      if (highClawbacks.length > 0) {
-        alertsHTML += `
-          <div class="alert alert-danger">
-            <i class="fas fa-exclamation-circle"></i>
-            <strong>خطر:</strong> هناك ${highClawbacks.length} أوامر بتعويضات عالية تتطلب مراجعة فورية
+
+          <div class="details mt-3 small text-gray-600">
+            <div class="mb-2"><strong>Peak & notes:</strong></div>
+            <div class="mb-2">
+              <textarea class="notes-area" data-branch="${m.branch}" placeholder="Manager notes, actions, commentary for ${m.branch}..."></textarea>
+              <div class="mt-2">
+                <button class="notes-save no-export" data-branch="${m.branch}">Save note</button>
+                <button class="notes-clear no-export ml-2" data-branch="${m.branch}">Clear</button>
+              </div>
+            </div>
           </div>
-        `;
-      }
-      
-      alertsHTML += `
-        <div class="alert alert-info">
-          <i class="fas fa-lightbulb"></i>
-          <strong>توصية:</strong>可以考虑协商降低佣金比例或优化促销策略以减少差异
         </div>
-      `;
-      
-      document.getElementById('alertsContainer').innerHTML = alertsHTML;
+      `).join('');
+
+      attachNotesHandlers();
     }
-    
-    // Save settings
-    function saveSettings() {
-      systemSettings.commissionRate = parseFloat(document.getElementById('commissionRate').value) || 25;
-      systemSettings.deliveryFee = parseFloat(document.getElementById('deliveryFee').value) || 7;
-      systemSettings.vatRate = parseFloat(document.getElementById('vatRate').value) || 5;
-      systemSettings.penaltyRate = parseFloat(document.getElementById('penaltyRate').value) || 10;
-      systemSettings.maxDiscountRate = parseFloat(document.getElementById('maxDiscountRate').value) || 20;
-      
-      updateAlerts();
-      showNotification('تم حفظ الإعدادات بنجاح', 'success');
-    }
-    
-    // Tab functionality
-    function openTab(evt, tabName) {
-      const tabContents = document.getElementsByClassName('tab-content');
-      for (let i = 0; i < tabContents.length; i++) {
-        tabContents[i].classList.remove('active');
-      }
-      
-      const tabs = document.getElementsByClassName('tab');
-      for (let i = 0; i < tabs.length; i++) {
-        tabs[i].classList.remove('active');
-      }
-      
-      document.getElementById(tabName).classList.add('active');
-      evt.currentTarget.classList.add('active');
-    }
-    
-    // Filter table
-    function filterTable(tableId, query) {
-      const rows = document.querySelectorAll(`#${tableId} tbody tr`);
-      rows.forEach(r => {
-        r.style.display = r.textContent.toLowerCase().includes(query.toLowerCase()) ? '' : 'none';
+
+    // attach autosave & buttons for notes
+    function attachNotesHandlers(){
+      const textareas = document.querySelectorAll('.notes-area');
+      textareas.forEach(area=>{
+        const branch = area.getAttribute('data-branch');
+        const key = `branchNote_${branch}`;
+        area.value = localStorage.getItem(key) || '';
+        // debounce auto-save
+        let t;
+        area.addEventListener('input', () => {
+          clearTimeout(t);
+          t = setTimeout(()=> {
+            localStorage.setItem(key, area.value);
+          }, 700);
+        });
+      });
+
+      // Save/clear buttons
+      document.querySelectorAll('.notes-save').forEach(btn=>{
+        btn.onclick = (e) => {
+          const branch = btn.getAttribute('data-branch');
+          const area = document.querySelector(`.notes-area[data-branch="${branch}"]`);
+          localStorage.setItem(`branchNote_${branch}`, area.value);
+          btn.textContent = 'Saved ✓';
+          setTimeout(()=> btn.textContent = 'Save note', 1200);
+        };
+      });
+      document.querySelectorAll('.notes-clear').forEach(btn=>{
+        btn.onclick = (e) => {
+          const branch = btn.getAttribute('data-branch');
+          if (!confirm('Clear note for ' + branch + '?')) return;
+          localStorage.removeItem(`branchNote_${branch}`);
+          const area = document.querySelector(`.notes-area[data-branch="${branch}"]`);
+          if (area) area.value = '';
+        };
       });
     }
-    
-    // Format currency
-    function formatCurrency(amount, short = false) {
-      if (short) {
-        return amount.toLocaleString('ar-AE') + ' AED';
+
+    // Filter salesData by global dateFilterStart/End; returns array
+    function filterByDate(arr){
+      if (!dateFilterStart && !dateFilterEnd) return arr.slice();
+      const start = dateFilterStart ? new Date(dateFilterStart + 'T00:00:00') : null;
+      const end   = dateFilterEnd   ? new Date(dateFilterEnd + 'T23:59:59') : null;
+      return arr.filter(r => {
+        if (!r.date) return false;
+        const d = new Date(r.date + 'T00:00:00');
+        if (start && d < start) return false;
+        if (end && d > end) return false;
+        return true;
+      });
+    }
+
+    // Update charts and KPIs based on current dateFilter
+    function updateChartsAndKPIs(){
+      const filtered = filterByDate(salesData);
+
+      // totals per branch
+      const branchTotals = branches.map(b => filtered.filter(r=>r.outlet===b).reduce((s,r)=>s+(r.total||0),0));
+
+      // daily labels
+      const dates = Array.from(new Set(filtered.map(r=>r.date))).sort();
+      const dailyTotals = dates.map(dt => filtered.filter(r=>r.date===dt).reduce((s,r)=>s+(r.total||0),0));
+
+      // BAR
+      if (barChart) barChart.destroy();
+      const barCtx = document.getElementById('barChart').getContext('2d');
+      barChart = new Chart(barCtx, {
+        type: 'bar',
+        data: { labels: branches, datasets: [{ label: 'Sales', data: branchTotals, backgroundColor: branches.map(()=> 'rgba(215,38,61,0.85)'), borderColor: branches.map(()=> 'rgba(215,38,61,1)'), borderWidth: 1 }] },
+        options: { plugins: { legend: { display: false }, title: { display: true, text: 'Total Sales by Branch' } }, scales: { y: { beginAtZero:true, title: { display:true, text: 'Sales (AED)' } } } }
+      });
+
+      // LINE
+      if (lineChart) lineChart.destroy();
+      const lineCtx = document.getElementById('lineChart').getContext('2d');
+      lineChart = new Chart(lineCtx, {
+        type: 'line',
+        data: { labels: dates, datasets: [{ label: 'Daily Sales', data: dailyTotals, borderColor: 'rgba(242,183,5,1)', backgroundColor: 'rgba(242,183,5,0.12)', fill: true, tension: 0.3, pointRadius: 2 }] },
+        options: { plugins: { legend: { display: false }, title: { display: true, text: 'Daily Sales Trend' } }, scales: { x: { ticks: { autoSkip: true, maxTicksLimit: 10 } }, y: { beginAtZero:true, title: { display:true, text: 'Sales (AED)' } } } }
+      });
+
+      // PIE
+      if (pieChart) pieChart.destroy();
+      const pieCtx = document.getElementById('pieChart').getContext('2d');
+      pieChart = new Chart(pieCtx, {
+        type: 'pie',
+        data: { labels: branches, datasets: [{ data: branchTotals, backgroundColor: ['#d7263d','#f29a2e','#7c3a9b','#ef476f','#66a61e','#f2b705'], borderColor: '#fff', borderWidth: 1 }] },
+        options: { plugins: { title: { display: true, text: 'Sales Distribution (by Branch)' }, datalabels: { formatter: (v,ctx)=> { const sum = ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0); return sum? ((v/sum)*100).toFixed(1)+'%':''; } } } }
+      });
+
+      // HEATMAP (stacked by branch across dates)
+      if (heatmapChart) heatmapChart.destroy();
+      const heatCtx = document.getElementById('heatmapChart').getContext('2d');
+      heatmapChart = new Chart(heatCtx, {
+        type: 'bar',
+        data: {
+          labels: dates,
+          datasets: branches.map((br,i)=>({
+            label: br,
+            data: dates.map(dt => filtered.find(r=>r.date===dt && r.outlet===br)?.deliverySales || 0),
+            stack: 'stack1',
+            backgroundColor: `rgba(${[(30+i*30)%255, (100+i*20)%255, (150+i*10)%255].join(',')},0.7)`
+          }))
+        },
+        options: { plugins: { title: { display: true, text: 'Delivery Sales by Branch (stacked by day)' }, legend: { position:'top' } }, scales: { y: { beginAtZero:true, title: { display:true, text: 'Delivery Sales (AED)' } }, x: { stacked: true }, yAxes: { stacked: true } } }
+      });
+
+      // Update KPI cards
+      const k = calculateKPIs(filtered);
+      document.getElementById('kpiSales').textContent = formatAED(k.totalSales);
+      document.getElementById('kpiOrders').textContent = formatNumber(k.totalOrders);
+      document.getElementById('kpiAOV').textContent = formatAED(k.aov);
+      const deliveryShare = k.totalSales ? ((k.deliverySales / k.totalSales) * 100).toFixed(1) : 0;
+      document.getElementById('kpiDeliveryShare').textContent = deliveryShare + ' %';
+      document.getElementById('kpiDeliveryOrders').textContent = formatNumber(k.deliveryOrders);
+      document.getElementById('kpiTopBranch').textContent = k.topBranch;
+      document.getElementById('kpiPeakDay').textContent = k.peakDate !== '—' ? new Date(k.peakDate).toLocaleDateString('en-GB') + ' · ' + formatAED(k.peakValue) : '—';
+
+      // simple growth delta vs previous month window (best-effort)
+      let prevStart = null, prevEnd = null;
+      if (dateFilterStart && dateFilterEnd) {
+        const s = new Date(dateFilterStart + 'T00:00:00'), e = new Date(dateFilterEnd + 'T23:59:59');
+        const diffMs = e - s;
+        prevEnd = new Date(s.getTime() - 86400000); // day before start
+        prevStart = new Date(prevEnd.getTime() - diffMs);
+        // format
+        const prevStartStr = prevStart.toISOString().slice(0,10), prevEndStr = prevEnd.toISOString().slice(0,10);
+        const prevSum = salesData.filter(d=>d.date && d.date >= prevStartStr && d.date <= prevEndStr).reduce((s,r)=>s+(r.total||0),0);
+        const pct = prevSum ? (((k.totalSales - prevSum) / prevSum) * 100).toFixed(1) : '0.0';
+        const el = document.getElementById('kpiSalesDelta');
+        el.textContent = (pct > 0 ? '+' : '') + pct + '%';
+        el.className = pct >= 0 ? 'small badge-up' : 'small badge-down';
+      } else {
+        document.getElementById('kpiSalesDelta').textContent = '—';
       }
-      return amount.toLocaleString('ar-AE', { style: 'currency', currency: 'AED' });
     }
-    
-    // Export to Excel
-    function exportExcel() {
-      const wb = XLSX.utils.book_new();
-      
-      // Daily analysis sheet
-      const dailyDataSheet = careemData.dailyAnalysis.map(day => ({
-        'التاريخ': day.date,
-        'عدد الأوامر': day.orderCount,
-        'الإيرادات': day.revenue,
-        'العمولة': day.commission,
-        'الخصومات': day.discounts,
-        'التعويضات': day.clawbacks,
-        'الدفعة': day.payout,
-        'الفرق': day.difference,
-        'نسبة الفرق': day.differenceRate + '%'
-      }));
-      
-      const wsDaily = XLSX.utils.json_to_sheet(dailyDataSheet);
-      
-      // Weekly analysis sheet
-      const weeklyDataSheet = careemData.weeklyAnalysis.map(week => ({
-        'الأسبوع': week.week,
-        'عدد الأوامر': week.orderCount,
-        'الإيرادات': week.revenue,
-        'العمولة': week.commission,
-        'الخصومات': week.discounts,
-        'التعويضات': week.clawbacks,
-        'الدفعة': week.payout,
-        'الفرق': week.difference,
-        'نسبة الفرق': week.differenceRate + '%'
-      }));
-      
-      const wsWeekly = XLSX.utils.json_to_sheet(weeklyDataSheet);
-      
-      // Reasons analysis sheet
-      const reasonsDataSheet = careemData.reasonsAnalysis.map(reason => ({
-        'سبب الفرق': reason.reason,
-        'العدد': reason.count,
-        'إجمالي المبلغ': reason.totalAmount,
-        'نسبة من الإيرادات': reason.revenuePercentage + '%',
-        'متوسط المبلغ': reason.averageAmount,
-        'الحالة': reason.status
-      }));
-      
-      const wsReasons = XLSX.utils.json_to_sheet(reasonsDataSheet);
-      
-      XLSX.utils.book_append_sheet(wb, wsDaily, 'التحليل اليومي');
-      XLSX.utils.book_append_sheet(wb, wsWeekly, 'التحليل الأسبوعي');
-      XLSX.utils.book_append_sheet(wb, wsReasons, 'أسباب الفروقات');
-      
-      XLSX.writeFile(wb, 'تقرير_كريم_فود.xlsx');
-      showNotification('تم تصدير ملف Excel بنجاح', 'success');
-    }
-    
-    // Export to PDF
-    function exportPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      
-      // Add Arabic font support
-      doc.addFont('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf', 'Roboto', 'normal');
-      doc.setFont('Roboto');
-      
-      doc.setFontSize(18);
-      doc.text("تقرير تحليل كريم فود", 105, 15, { align: 'center' });
-      
-      doc.setFontSize(12);
-      doc.text("الفترة: 1-7 سبتمبر 2025", 20, 30);
-      
-      // Summary
-      doc.setFontSize(14);
-      doc.text("ملخص الأداء", 20, 45);
-      
-      doc.setFontSize(12);
-      const totalRevenue = careemData.orders.reduce((sum, order) => sum + order.amount, 0);
-      const totalCommission = careemData.orders.reduce((sum, order) => sum + order.commission, 0);
-      const totalDiscounts = careemData.orders.reduce((sum, order) => sum + order.discount, 0);
-      const totalClawbacks = careemData.adjustments.reduce((sum, adj) => sum + Math.abs(adj.amount), 0);
-      
-      doc.text("إجمالي الإيرادات: " + formatCurrency(totalRevenue), 20, 55);
-      doc.text("إجمالي العمولة: " + formatCurrency(totalCommission), 20, 65);
-      doc.text("إجمالي الخصومات: " + formatCurrency(totalDiscounts), 20, 75);
-      doc.text("إجمالي التعويضات: " + formatCurrency(totalClawbacks), 20, 85);
-      
-      // Add charts as images
-      const charts = [
-        { canvas: 'revenueVsDifferenceChart', y: 95 },
-        { canvas: 'deductionsDistributionChart', y: 170 },
-        { canvas: 'reasonsChart', y: 245 }
-      ];
-      
-      charts.forEach(chart => {
-        const chartCanvas = document.getElementById(chart.canvas);
-        const chartImage = chartCanvas.toDataURL('image/png');
-        doc.addImage(chartImage, 'PNG', 15, chart.y, 180, 70);
+
+    // Initialize DataTable once
+    function initTable(){
+      dataTable = $('#dataTable').DataTable({
+        data: salesData,
+        columns: [
+          { data: 'date', render: d => d ? new Date(d).toLocaleDateString('en-GB') : '' },
+          { data: 'outlet' },
+          { data: 'count' },
+          { data: 'total', render: d => d ? Number(d).toLocaleString('en-AE', { minimumFractionDigits:1 }) + ' AED' : '' },
+          { data: 'deliveryOrders' },
+          { data: 'deliverySales', render: d => d ? Number(d).toLocaleString('en-AE', { minimumFractionDigits:1 }) + ' AED' : '' },
+          { data: null, orderable:false, render: (data, type, row, meta) => `<div class="flex gap-2"><button onclick="editRow(${meta.row})" class="px-2 py-1 bg-yellow-400 rounded text-sm">Edit</button><button onclick="deleteRow(${meta.row})" class="px-2 py-1 bg-red-500 rounded text-sm text-white">Delete</button></div>` }
+        ],
+        pageLength: 8,
+        order: [[0,'desc']],
+        responsive: true
       });
-      
-      doc.save('تقرير_كريم_فود.pdf');
-      showNotification('تم تصدير ملف PDF بنجاح', 'success');
-    }
-    
-    // Export charts
-    function exportCharts() {
-      // Create a new canvas to combine all charts
-      const combinedCanvas = document.createElement('canvas');
-      const ctx = combinedCanvas.getContext('2d');
-      combinedCanvas.width = 1200;
-      combinedCanvas.height = 1600;
-      
-      // Fill background
-      ctx.fillStyle = 'white';
-      ctx.fillRect(0, 0, combinedCanvas.width, combinedCanvas.height);
-      
-      // Add title
-      ctx.fillStyle = '#2c3e50';
-      ctx.font = 'bold 28px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('تقرير الرسوم البيانية - تحليل كريم فود', combinedCanvas.width / 2, 40);
-      
-      // Add date
-      ctx.fillStyle = '#7f8c8d';
-      ctx.font = '16px Arial';
-      ctx.fillText('تاريخ التقرير: ' + new Date().toLocaleDateString('ar-AE'), combinedCanvas.width / 2, 70);
-      
-      // Get chart canvases
-      const charts = [
-        { canvas: 'revenueVsDifferenceChart', y: 100, title: 'تطور الإيرادات والفروقات' },
-        { canvas: 'deductionsDistributionChart', y: 450, title: 'توزيع الخصومات والتعويضات' },
-        { canvas: 'reasonsChart', y: 800, title: 'أسباب الفروقات' },
-        { canvas: 'periodComparisonChart', y: 1150, title: 'مقارنة الفترات' }
-      ];
-      
-      charts.forEach(chart => {
-        // Add chart title
-        ctx.fillStyle = '#2c3e50';
-        ctx.font = 'bold 20px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(chart.title, combinedCanvas.width / 2, chart.y - 20);
-        
-        // Draw chart
-        const chartCanvas = document.getElementById(chart.canvas);
-        ctx.drawImage(chartCanvas, 100, chart.y, 1000, 300);
-      });
-      
-      // Create download link
-      const link = document.createElement('a');
-      link.download = 'تقرير_الرسوم_البيانية_كريم_فود.png';
-      link.href = combinedCanvas.toDataURL('image/png');
-      link.click();
-      
-      showNotification('تم تصدير الرسوم البيانية بنجاح', 'success');
-    }
-    
-    // Show notification
-    function showNotification(message, type) {
-      const notification = document.getElementById('notification');
-      notification.textContent = message;
-      notification.className = 'notification ' + type;
-      notification.classList.add('show');
-      
-      setTimeout(() => {
-        notification.classList.remove('show');
-      }, 3000);
-    }
-    
-    // File upload handlers
-    document.getElementById('careemFile').addEventListener('change', function(e) {
-      handleFileUpload(e, 'careem');
-    });
-    
-    document.getElementById('payoutsFile').addEventListener('change', function(e) {
-      handleFileUpload(e, 'payouts');
-    });
-    
-    document.getElementById('adjustmentsFile').addEventListener('change', function(e) {
-      handleFileUpload(e, 'adjustments');
-    });
-    
-    // Handle file upload
-    function handleFileUpload(e, type) {
-      const file = e.target.files[0];
-      if (!file) return;
-      
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        try {
-          let data;
-          if (file.name.endsWith('.csv')) {
-            data = Papa.parse(event.target.result, {
-              header: true,
-              skipEmptyLines: true
-            }).data;
-          } else {
-            const workbook = XLSX.read(event.target.result, { type: 'array' });
-            data = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-          }
-          
-          // Process the uploaded data
-          processUploadedData(data, type);
-          showNotification('تم تحميل بيانات ' + getTypeText(type) + ' بنجاح', 'success');
-        } catch (error) {
-          showNotification('خطأ في قراءة الملف: ' + error.message, 'error');
+
+      // DataTables custom filter (range) uses global dateFilterStart & dateFilterEnd
+      $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+        if (!dateFilterStart && !dateFilterEnd) return true;
+        const rowDateStr = salesData[dataIndex] && salesData[dataIndex].date;
+        if (!rowDateStr) return false;
+        const rowDate = new Date(rowDateStr + 'T00:00:00');
+        if (dateFilterStart) {
+          const start = new Date(dateFilterStart + 'T00:00:00');
+          if (rowDate < start) return false;
         }
+        if (dateFilterEnd) {
+          const end = new Date(dateFilterEnd + 'T23:59:59');
+          if (rowDate > end) return false;
+        }
+        return true;
+      });
+    }
+
+    // Edit & Delete row handlers
+    function editRow(idx){
+      const row = salesData[idx];
+      const input = prompt('Edit row (Date,Outlet,Orders,Sales,DeliveryOrders,DeliverySales):', `${row.date},${row.outlet},${row.count},${row.total},${row.deliveryOrders},${row.deliverySales}`);
+      if (!input) return;
+      const parts = input.split(',');
+      if (parts.length < 6) { alert('Incorrect format'); return; }
+      salesData[idx] = {
+        date: parts[0].trim(), outlet: parts[1].trim(),
+        count: parseInt(parts[2]), total: parseFloat(parts[3]),
+        deliveryOrders: parseInt(parts[4]), deliverySales: parseFloat(parts[5])
       };
-      reader.readAsArrayBuffer(file);
+      persistAndRefresh();
+      alert('Row updated');
     }
-    
-    // Get type text
-    function getTypeText(type) {
-      const types = {
-        'careem': 'أوامر كريم',
-        'payouts': 'الدفعات',
-        'adjustments': 'التعديلات'
+    function deleteRow(idx){
+      if (!confirm('Delete this row?')) return;
+      salesData.splice(idx,1);
+      persistAndRefresh();
+      alert('Deleted');
+    }
+
+    // Persist & refresh UI
+    function persistAndRefresh(){
+      localStorage.setItem('salesData', JSON.stringify(salesData));
+      dataTable.clear().rows.add(salesData).draw();
+      renderBranchCards();
+      updateChartsAndKPIs();
+      lastUpdatedText();
+    }
+
+    // Quick input update
+    document.getElementById('btnUpdate').addEventListener('click', ()=>{
+      const raw = document.getElementById('dataInput').value.trim();
+      if (!raw) { alert('Add rows first'); return; }
+      try {
+        const rows = raw.split('\n').map(r=>r.trim()).filter(Boolean).map(r=>{
+          const p = r.split(',');
+          return { date: p[0].trim(), outlet: p[1].trim(), count: parseInt(p[2]), total: parseFloat(p[3]), deliveryOrders: parseInt(p[4]), deliverySales: parseFloat(p[5]) };
+        });
+        salesData = salesData.concat(rows);
+        document.getElementById('dataInput').value = '';
+        persistAndRefresh();
+        alert('Data added');
+      } catch(e){ alert('Invalid format. Use Date,Outlet,Orders,Sales,DeliveryOrders,DeliverySales'); }
+    });
+    document.getElementById('btnClearInput').addEventListener('click', ()=> document.getElementById('dataInput').value = '');
+
+    // Export CSV (keeps existing behavior)
+    document.getElementById('btnExportCSV').addEventListener('click', ()=>{
+      const header = ['Date,Outlet,Orders,Sales,DeliveryOrders,DeliverySales'];
+      const rows = salesData.map(r => `${r.date},${r.outlet},${r.count},${r.total},${r.deliveryOrders},${r.deliverySales}`);
+      const csv = header.concat(rows).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'crispy_sales_export.csv'; a.click(); URL.revokeObjectURL(url);
+    });
+
+    // Reset
+    document.getElementById('btnReset').addEventListener('click', ()=>{
+      if (!confirm('Reset data to sample dataset? This will clear local edits.')) return;
+      localStorage.removeItem('salesData');
+      // remove branch notes too
+      branches.forEach(b => localStorage.removeItem(`branchNote_${b}`));
+      location.reload();
+    });
+
+    // Export PDF (board pack)
+    document.getElementById('btnExportPDF').addEventListener('click', async ()=>{
+      // Expand all branch details so notes appear in PDF
+      document.querySelectorAll('.branch-card').forEach(c => c.classList.add('expanded'));
+      // hide controls with .no-export
+      document.body.classList.add('pdf-export');
+
+      // Allow layout to settle
+      await new Promise(r => setTimeout(r, 600));
+
+      const element = document.getElementById('dashboard');
+      const opt = {
+        margin: 0.4,
+        filename: 'CrispyChicken_BoardPack.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
       };
-      return types[type] || type;
+
+      // produce PDF
+      html2pdf().set(opt).from(element).save()
+        .then(() => {
+          // revert UI
+          document.body.classList.remove('pdf-export');
+        })
+        .catch(() => {
+          document.body.classList.remove('pdf-export');
+        });
+    });
+
+    // DateRange (flatpickr) initialization and handler
+    function initDateRangePicker(){
+      const allDates = salesData.map(r=>r.date).filter(Boolean).sort();
+      const defaultStart = allDates.length ? allDates[0] : '2025-09-01';
+      const defaultEnd   = allDates.length ? allDates[allDates.length-1] : '2025-09-24';
+
+      // set global defaults
+      dateFilterStart = defaultStart;
+      dateFilterEnd = defaultEnd;
+
+      flatpickr("#dateRange", {
+        mode: "range",
+        dateFormat: "Y-m-d",
+        defaultDate: [defaultStart, defaultEnd],
+        onClose: function(selectedDates){
+          if (selectedDates.length === 0) {
+            dateFilterStart = null; dateFilterEnd = null;
+          } else if (selectedDates.length === 1) {
+            dateFilterStart = selectedDates[0].toISOString().slice(0,10);
+            dateFilterEnd = dateFilterStart;
+          } else {
+            dateFilterStart = selectedDates[0].toISOString().slice(0,10);
+            dateFilterEnd = selectedDates[1].toISOString().slice(0,10);
+          }
+          // redraw table & charts/cards
+          dataTable.draw();
+          renderBranchCards();
+          updateChartsAndKPIs();
+        }
+      });
     }
-    
-    // Process uploaded data
-    function processUploadedData(data, type) {
-      if (type === 'careem') {
-        careemData.orders = data.map(row => ({
-          id: row['Order ID'] || row['رقم الطلب'] || '',
-          date: row['Date'] || row['التاريخ'] || '',
-          customer: row['Customer'] || row['العميل'] || '',
-          amount: parseFloat(row['Amount'] || row['المبلغ'] || 0),
-          discount: parseFloat(row['Discount'] || row['الخصم'] || 0),
-          commission: parseFloat(row['Commission'] || row['العمولة'] || 0),
-          status: row['Status'] || row['الحالة'] || 'completed'
-        }));
-      } else if (type === 'payouts') {
-        careemData.payouts = data.map(row => ({
-          id: row['Payout ID'] || row['معرف الدفعة'] || '',
-          date: row['Date'] || row['التاريخ'] || '',
-          amount: parseFloat(row['Amount'] || row['المبلغ'] || 0),
-          period: row['Period'] || row['الفترة'] || '',
-          status: row['Status'] || row['الحالة'] || 'completed'
-        }));
-      } else if (type === 'adjustments') {
-        careemData.adjustments = data.map(row => ({
-          id: row['Adjustment ID'] || row['معرف التعديل'] || '',
-          date: row['Date'] || row['التاريخ'] || '',
-          orderID: row['Order ID'] || row['رقم الطلب'] || '',
-          amount: parseFloat(row['Amount'] || row['المبلغ'] || 0),
-          reason: row['Reason'] || row['السبب'] || 'other',
-          description: row['Description'] || row['الوصف'] || '',
-          type: row['Type'] || row['النوع'] || 'clawback'
-        }));
-      }
-      
-      // Re-process data for analysis
-      processDataForAnalysis();
-      
-      // Update displays
-      updateDashboard();
-      renderTables();
-      renderCharts();
-      updateAlerts();
-    }
+
+    // On load: initialize table, charts, and UI
+    document.addEventListener('DOMContentLoaded', ()=>{
+      initTable();
+      initDateRangePicker();
+      renderBranchCards();
+      updateChartsAndKPIs();
+      lastUpdatedText();
+
+      // Expose functions used in DataTable buttons
+      window.editRow = editRow;
+      window.deleteRow = deleteRow;
+    });
   </script>
 </body>
 </html>
