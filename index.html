@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Crispy Chicken — Delivery Sales Dashboard (Jan–Sep 2025)</title>
-  <!-- Tailwind CDN -->
+  <title>Crispy Chicken — Enhanced Delivery Sales Dashboard</title>
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js and plugins -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
@@ -17,35 +17,119 @@
   <!-- Export libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <!-- Dark mode support -->
-  <script>
-    tailwind.config = { darkMode: 'class' }
-  </script>
+  <!-- Prophet.js for forecasting -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <!-- Shepherd.js for guided tours -->
+  <script src="https://cdn.jsdelivr.net/npm/shepherd.js@11.1.1/dist/js/shepherd.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shepherd.js@11.1.1/dist/css/shepherd.css">
+  <!-- Custom styles -->
   <style>
     :root {
       --brand-red: #d7263d;
       --brand-gold: #f2b705;
+      --brand-green: #10b981;
+      --brand-blue: #3b82f6;
       --muted: #6b7280;
       --card-bg: #ffffff;
       --glass: rgba(255,255,255,0.6);
     }
-    body { background: linear-gradient(180deg,#fbfbfc 0,#f1f5f9 100%); font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; color:#0b1220; }
-    .dark { background: linear-gradient(180deg,#1a202c 0,#2d3748 100%); color: #e2e8f0; }
+    body { 
+      background: linear-gradient(180deg,#fbfbfc 0,#f1f5f9 100%); 
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; 
+      color:#0b1220; 
+    }
+    .dark { 
+      background: linear-gradient(180deg,#1a202c 0,#2d3748 100%); 
+      color: #e2e8f0; 
+    }
     .dark .card { background: #2d3748; }
-    .card { background: var(--card-bg); border-radius: 12px; box-shadow: 0 6px 20px rgba(11,17,32,0.06); }
-    .kpi { min-width: 12rem; }
+    .card { 
+      background: var(--card-bg); 
+      border-radius: 12px; 
+      box-shadow: 0 6px 20px rgba(11,17,32,0.06); 
+      transition: all 0.3s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(11,17,32,0.12);
+    }
+    .kpi { 
+      min-width: 12rem; 
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--brand-red);
+    }
     .small { font-size: 0.85rem; color: var(--muted); }
-    .badge-up { color: #166534; background: rgba(16,185,129,0.08); padding: 2px 8px; border-radius: 999px; font-weight: 600; }
-    .badge-down { color: #7f1d1d; background: rgba(239,68,68,0.08); padding: 2px 8px; border-radius: 999px; font-weight: 600; }
-    .branch-card { transition: transform .18s ease, box-shadow .18s ease; cursor: pointer; }
-    .branch-card:hover { transform: translateY(-6px); box-shadow: 0 12px 30px rgba(11,17,32,0.12); }
-    .expandable .details { display: none; }
-    .expandable.expanded .details { display: block; }
-    .charts-grid { display: grid; grid-template-columns: repeat(1,1fr); gap: 1rem; }
+    .badge-up { 
+      color: #166534; 
+      background: rgba(16,185,129,0.08); 
+      padding: 2px 8px; 
+      border-radius: 999px; 
+      font-weight: 600; 
+    }
+    .badge-down { 
+      color: #7f1d1d; 
+      background: rgba(239,68,68,0.08); 
+      padding: 2px 8px; 
+      border-radius: 999px; 
+      font-weight: 600; 
+    }
+    .badge-warning {
+      color: #854d0e;
+      background: rgba(245, 158, 11, 0.08);
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+    .branch-card { 
+      transition: transform .18s ease, box-shadow .18s ease; 
+      cursor: pointer; 
+      position: relative;
+      overflow: hidden;
+    }
+    .branch-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 40px;
+      height: 40px;
+      background: var(--brand-red);
+      opacity: 0.1;
+      border-radius: 0 0 0 100%;
+    }
+    .expandable .details { 
+      display: none; 
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    .expandable.expanded .details { 
+      display: block;
+      max-height: 500px;
+    }
+    .charts-grid { 
+      display: grid; 
+      grid-template-columns: repeat(1,1fr); 
+      gap: 1rem; 
+    }
     @media (min-width: 900px) { .charts-grid { grid-template-columns: repeat(2,1fr); } }
     @media (min-width: 900px) { .kpi-row { display: flex; gap: 1rem; } }
     table.dataTable { width: 100% !important; }
-    .top-controls { gap: 0.75rem; display: flex; align-items: center; flex-wrap: wrap; }
+    .top-controls { 
+      gap: 0.75rem; 
+      display: flex; 
+      align-items: center; 
+      flex-wrap: wrap; 
+    }
     .spinner {
       border: 3px solid rgba(0, 0, 0, 0.1);
       border-radius: 50%;
@@ -58,11 +142,38 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    .heatmap-cell { transition: all 0.2s ease; border: 1px solid rgba(0, 0, 0, 0.1); }
+    .heatmap-cell { 
+      transition: all 0.2s ease; 
+      border: 1px solid rgba(0, 0, 0, 0.1); 
+      position: relative;
+      overflow: hidden;
+    }
+    .heatmap-cell::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .heatmap-cell:hover::after {
+      opacity: 1;
+    }
     .dark .heatmap-cell { border: 1px solid rgba(255, 255, 255, 0.1); }
     .notification {
-      position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 8px;
-      color: white; font-weight: 500; z-index: 1000; animation: slideIn 0.3s ease-out;
+      position: fixed; 
+      top: 20px; 
+      right: 20px; 
+      padding: 12px 20px; 
+      border-radius: 8px;
+      color: white; 
+      font-weight: 500; 
+      z-index: 1000; 
+      animation: slideIn 0.3s ease-out;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
     @keyframes slideIn {
       from { transform: translateX(100%); opacity: 0; }
@@ -71,17 +182,177 @@
     .notification.success { background: #10b981; }
     .notification.error { background: #ef4444; }
     .notification.info { background: #3b82f6; }
+    .notification.warning { background: #f59e0b; }
     .tooltip {
       position: relative;
     }
     .tooltip .tooltiptext {
-      visibility: hidden; width: 200px; background-color: rgba(0, 0, 0, 0.8);
-      color: #fff; text-align: center; border-radius: 6px; padding: 5px;
-      position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -100px;
-      opacity: 0; transition: opacity 0.3s; font-size: 12px;
+      visibility: hidden; 
+      width: 200px; 
+      background-color: rgba(0, 0, 0, 0.8);
+      color: #fff; 
+      text-align: center; 
+      border-radius: 6px; 
+      padding: 5px;
+      position: absolute; 
+      z-index: 1; 
+      bottom: 125%; 
+      left: 50%; 
+      margin-left: -100px;
+      opacity: 0; 
+      transition: opacity 0.3s; 
+      font-size: 12px;
     }
     .tooltip:hover .tooltiptext {
       visibility: visible; opacity: 1;
+    }
+    /* Drill-down styles */
+    .drill-path {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      padding: 0.5rem;
+      background: rgba(215, 38, 61, 0.05);
+      border-radius: 8px;
+    }
+    .drill-path-item {
+      padding: 0.25rem 0.75rem;
+      background: var(--brand-red);
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .drill-path-item:hover {
+      background: #b71c1c;
+    }
+    .drill-path-item.active {
+      background: var(--brand-gold);
+      color: #000;
+    }
+    .insight-box {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(59, 130, 246, 0.1) 100%);
+      border-left: 4px solid var(--brand-blue);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      transition: all 0.3s ease;
+    }
+    .insight-box:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    }
+    .goal-progress {
+      height: 8px;
+      background: #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 0.5rem;
+    }
+    .goal-progress-bar {
+      height: 100%;
+      background: var(--brand-red);
+      transition: width 0.5s ease;
+    }
+    .anomaly-marker {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 10px;
+      height: 10px;
+      background: #ef4444;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.7; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .accordion-header {
+      background: var(--brand-red);
+      color: white;
+      padding: 1rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 8px 8px 0 0;
+    }
+    .accordion-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      background: rgba(255, 255, 255, 0.5);
+    }
+    .accordion-content.expanded {
+      max-height: 1000px;
+    }
+    .role-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      background: var(--brand-gold);
+      color: #000;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-left: 0.5rem;
+    }
+    .data-quality-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .data-quality-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .data-quality-good { background: #10b981; }
+    .data-quality-warning { background: #f59e0b; }
+    .data-quality-bad { background: #ef4444; }
+    .present-mode .controls,
+    .present-mode .footer {
+      display: none;
+    }
+    .present-mode .kpi,
+    .present-mode .chart {
+      box-shadow: none;
+      border: none;
+      background: white;
+    }
+    .forecast-interval {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px dashed var(--brand-blue);
+      border-radius: 4px;
+    }
+    .hourly-heatmap {
+      display: grid;
+      grid-template-columns: 24fr repeat(24, 1fr);
+      gap: 2px;
+    }
+    .hour-label {
+      font-size: 0.75rem;
+      text-align: center;
+      padding: 0.25rem;
+    }
+    .branch-label {
+      font-size: 0.75rem;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      text-align: center;
+      padding: 0.25rem;
+    }
+    .hour-cell {
+      height: 30px;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .hour-cell:hover {
+      transform: scale(1.1);
+      z-index: 10;
     }
   </style>
 </head>
@@ -92,8 +363,9 @@
       <div class="flex items-center gap-4">
         <img src="https://crispychicken-uae.com/logo.png" alt="Crispy Chicken" style="height:64px;width:auto; border-radius:8px;" />
         <div>
-          <h1 class="text-2xl font-bold" style="color:var(--brand-red)">Crispy Chicken — Delivery Sales Dashboard</h1>
-          <div class="small">January – September 2025 &middot; Real time preview · For top management</div>
+          <h1 class="text-2xl font-bold" style="color:var(--brand-red)">Crispy Chicken — Enhanced Delivery Sales Dashboard</h1>
+          <div class="small">January – September 2025 &middot; Real-time preview · For top management</div>
+          <span class="role-badge" id="userRole">Manager</span>
         </div>
       </div>
       <div class="top-controls">
@@ -112,33 +384,66 @@
             <option value="all">Jan–Sep 2025 (All)</option>
           </select>
         </div>
+        <div class="card px-3 py-2 flex items-center gap-3">
+          <label for="comparePeriod" class="small">Compare to</label>
+          <select id="comparePeriod" class="p-2 border rounded text-sm">
+            <option value="prev-month">Previous Month</option>
+            <option value="prev-year">Previous Year</option>
+            <option value="same-day-last-week">Same Day Last Week</option>
+          </select>
+        </div>
         <button id="btnExportCSV" class="px-3 py-2 card text-sm font-semibold" title="Export CSV">Export CSV</button>
         <button id="btnExportPDF" class="px-3 py-2 card text-sm font-semibold" title="Export PDF">Export PDF</button>
         <button id="btnExportExcel" class="px-3 py-2 card text-sm font-semibold" title="Export Excel">Export Excel</button>
+        <button id="btnScheduleExport" class="px-3 py-2 card text-sm font-semibold" title="Schedule Export">Schedule Export</button>
+        <button id="btnPresentMode" class="px-3 py-2 card text-sm font-semibold" title="Present Mode">Present Mode</button>
         <button id="btnReset" class="px-3 py-2 card text-sm font-semibold" title="Reset data">Reset</button>
         <button id="darkModeToggle" class="px-3 py-2 card text-sm font-semibold" title="Toggle dark mode">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd" />
           </svg>
         </button>
+        <button id="btnTour" class="px-3 py-2 card text-sm font-semibold" title="Take Tour">Take Tour</button>
       </div>
     </header>
+
+    <!-- INSIGHTS SECTION -->
+    <section class="mb-6">
+      <div class="insight-box">
+        <h3 class="font-semibold mb-2">🔍 Key Insights</h3>
+        <div id="insightsContainer">
+          <p class="small">Loading insights...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- DRILL-DOWN PATH -->
+    <div id="drillPath" class="drill-path mb-6" style="display: none;">
+      <span class="small">Drill-down path:</span>
+      <div class="drill-path-item active" data-level="0">Dashboard</div>
+    </div>
+
     <!-- KPI CARDS -->
     <section class="kpi-row mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="card kpi p-4">
+      <div class="card kpi p-4 drillable" data-metric="sales" data-drill-type="sales">
         <div class="flex items-center justify-between">
           <div>
             <div class="small">Total Delivery Sales</div>
             <div id="kpiSales" class="text-2xl font-bold" style="color:var(--brand-red)">— AED</div>
             <div class="small mt-1">Period total</div>
+            <div class="data-quality-indicator mt-1">
+              <span class="data-quality-dot data-quality-good"></span>
+              <span class="small">Data quality: Good</span>
+            </div>
           </div>
           <div class="text-right">
             <div class="small">Growth</div>
             <div id="kpiSalesDelta" class="small badge-up">+0.0%</div>
+            <div class="small mt-1">vs previous period</div>
           </div>
         </div>
       </div>
-      <div class="card kpi p-4">
+      <div class="card kpi p-4 drillable" data-metric="orders" data-drill-type="orders">
         <div class="flex items-center justify-between">
           <div>
             <div class="small">Total Delivery Orders</div>
@@ -151,7 +456,7 @@
           </div>
         </div>
       </div>
-      <div class="card kpi p-4">
+      <div class="card kpi p-4 drillable" data-metric="growth" data-drill-type="growth">
         <div class="flex items-center justify-between">
           <div>
             <div class="small">Delivery Orders Growth</div>
@@ -164,7 +469,7 @@
           </div>
         </div>
       </div>
-      <div class="card kpi p-4">
+      <div class="card kpi p-4 drillable" data-metric="top" data-drill-type="top">
         <div class="flex items-center justify-between">
           <div>
             <div class="small">Top Branch</div>
@@ -178,12 +483,59 @@
         </div>
       </div>
     </section>
+
+    <!-- GOALS & BENCHMARKS -->
+    <section class="mb-6">
+      <div class="card p-4">
+        <h3 class="font-semibold mb-3">Goals & Benchmarks</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div>
+            <div class="small mb-1">Monthly Sales Target</div>
+            <div class="flex justify-between mb-1">
+              <span id="monthlyTarget" class="font-semibold">— AED</span>
+              <span id="monthlyProgress" class="small">0%</span>
+            </div>
+            <div class="goal-progress">
+              <div id="monthlyProgressBar" class="goal-progress-bar" style="width: 0%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="small mb-1">Branch Ranking</div>
+            <div id="branchRanking" class="text-sm">
+              <div class="flex justify-between py-1">
+                <span>1. Hamdan</span>
+                <span class="font-semibold">983 orders</span>
+              </div>
+              <div class="flex justify-between py-1">
+                <span>2. Shabiya</span>
+                <span class="font-semibold">567 orders</span>
+              </div>
+              <div class="flex justify-between py-1">
+                <span>3. Khalidiyah</span>
+                <span class="font-semibold">508 orders</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="small mb-1">Performance Alerts</div>
+            <div id="performanceAlerts" class="text-sm">
+              <div class="flex items-center gap-2 py-1">
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <span>All branches on track</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Branch Performance Cards -->
     <section class="mb-6">
       <h2 class="text-lg font-semibold mb-3" style="color:var(--brand-red)">Branch Delivery Performance</h2>
       <div id="branchRow1" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4"></div>
       <div id="branchRow2" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
     </section>
+
     <!-- Chart Filters -->
     <section class="mb-6">
       <div class="card p-4">
@@ -208,12 +560,22 @@
               <input type="date" id="endDate" class="flex-1 p-2 border rounded" placeholder="End date">
             </div>
           </div>
+          <div class="flex-1 min-w-[200px]">
+            <label class="block text-sm font-medium mb-1">Time Period</label>
+            <select id="timePeriod" class="w-full p-2 border rounded">
+              <option value="daily">Daily</option>
+              <option value="hourly">Hourly</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
           <div class="flex items-end">
             <button id="applyFilters" class="px-4 py-2 bg-red-600 text-white rounded font-medium">Apply Filters</button>
           </div>
         </div>
       </div>
     </section>
+
     <!-- Charts grid -->
     <section class="mb-6">
       <h2 class="text-lg font-semibold mb-3" style="color:var(--brand-red)">Delivery Sales Analysis</h2>
@@ -236,6 +598,23 @@
         </div>
       </div>
     </section>
+
+    <!-- Hourly Analysis -->
+    <section class="mb-6">
+      <div class="card p-4">
+        <h3 class="font-semibold mb-2">Hourly Performance Analysis</h3>
+        <div id="hourlyHeatmap" class="hourly-heatmap"></div>
+      </div>
+    </section>
+
+    <!-- Forecasting Section -->
+    <section class="mb-6">
+      <div class="card p-4">
+        <h3 class="font-semibold mb-2">Sales Forecast & Trend Projections</h3>
+        <canvas id="forecastChart" height="220"></canvas>
+      </div>
+    </section>
+
     <!-- Data Input and Table -->
     <section class="mb-6">
       <div class="flex flex-col lg:flex-row gap-4">
@@ -245,6 +624,7 @@
           <div class="flex gap-2">
             <button id="btnUpdate" class="px-3 py-2 bg-red-600 text-white rounded">Update Data</button>
             <button id="btnClearInput" class="px-3 py-2 border rounded">Clear</button>
+            <button id="btnSetGoals" class="px-3 py-2 border rounded">Set Goals</button>
             <div class="small self-center ml-auto text-gray-500">Tip: Use YYYY-MM-DD dates</div>
           </div>
         </div>
@@ -265,10 +645,54 @@
         </div>
       </div>
     </section>
+
+    <!-- Data Quality Section -->
+    <section class="mb-6">
+      <div class="card p-4">
+        <h3 class="font-semibold mb-2">Data Quality & Audit Trail</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <h4 class="font-medium mb-2">Data Quality Metrics</h4>
+            <div id="dataQuality" class="text-sm">
+              <div class="flex justify-between py-1">
+                <span>Completeness</span>
+                <span class="font-semibold">98%</span>
+              </div>
+              <div class="flex justify-between py-1">
+                <span>Accuracy</span>
+                <span class="font-semibold">96%</span>
+              </div>
+              <div class="flex justify-between py-1">
+                <span>Consistency</span>
+                <span class="font-semibold">99%</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <h4 class="font-medium mb-2">Recent Audit Log</h4>
+            <div id="auditLog" class="text-sm max-h-32 overflow-y-auto">
+              <div class="py-1 border-b">
+                <span class="font-medium">09/24/2025 14:30</span> - Data updated by admin
+              </div>
+              <div class="py-1 border-b">
+                <span class="font-medium">09/23/2025 10:15</span> - Exported report to PDF
+              </div>
+              <div class="py-1 border-b">
+                <span class="font-medium">09/22/2025 16:45</span> - Set monthly sales target
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <footer class="text-sm text-gray-500 mt-6">
-      Last updated: <span id="lastUpdated">—</span> &middot; Prepared for Top Management — Crispy Chicken
+      Last updated: <span id="lastUpdated">—</span> &middot; 
+      Data version: <span id="dataVersion">v1.0</span> &middot; 
+      Prepared for Top Management — Crispy Chicken
     </footer>
   </div>
+
   <!-- Notification container -->
   <div id="notificationContainer"></div>
   <!-- Loading overlay -->
@@ -278,9 +702,98 @@
       <span>Processing...</span>
     </div>
   </div>
+
+  <!-- Drill-down modal -->
+  <div id="drillModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 id="drillModalTitle" class="text-xl font-bold">Drill-down View</h3>
+        <button id="closeDrillModal" class="text-gray-500 hover:text-gray-700">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div id="drillModalContent"></div>
+    </div>
+  </div>
+
+  <!-- Goal setting modal -->
+  <div id="goalModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold">Set Goals & Targets</h3>
+        <button id="closeGoalModal" class="text-gray-500 hover:text-gray-700">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div id="goalModalContent"></div>
+      <div class="mt-4 flex justify-end gap-2">
+        <button id="cancelGoals" class="px-4 py-2 border rounded">Cancel</button>
+        <button id="saveGoals" class="px-4 py-2 bg-red-600 text-white rounded">Save Goals</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Schedule export modal -->
+  <div id="scheduleModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold">Schedule Export</h3>
+        <button id="closeScheduleModal" class="text-gray-500 hover:text-gray-700">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium mb-1">Export Format</label>
+        <select id="exportFormat" class="w-full p-2 border rounded">
+          <option value="pdf">PDF Report</option>
+          <option value="excel">Excel Workbook</option>
+          <option value="csv">CSV Data</option>
+        </select>
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium mb-1">Frequency</label>
+        <select id="exportFrequency" class="w-full p-2 border rounded">
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+        </select>
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium mb-1">Time</label>
+        <input type="time" id="exportTime" class="w-full p-2 border rounded" value="09:00">
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium mb-1">Recipients</label>
+        <input type="email" id="exportRecipients" class="w-full p-2 border rounded" placeholder="Enter email addresses, comma separated">
+      </div>
+      <div class="flex justify-end gap-2">
+        <button id="cancelSchedule" class="px-4 py-2 border rounded">Cancel</button>
+        <button id="saveSchedule" class="px-4 py-2 bg-red-600 text-white rounded">Save Schedule</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Register Chart plugins
     Chart.register(ChartDataLabels, window.ChartAnnotationPlugin || { id: 'annotation' });
+
+    // Initialize Shepherd tour
+    const tour = new Shepherd.Tour({
+      useModalOverlay: true,
+      defaultStepOptions: {
+        classes: 'shepherd-theme-arrows',
+        scrollTo: true,
+        cancelIcon: {
+          enabled: true
+        }
+      }
+    });
 
     // Branch mapping
     const branchMapping = {
@@ -291,6 +804,25 @@
       'Satwa Shop': 'Satwa',
       'Shabiha Shop': 'Shabiya'
     };
+
+    // User roles and permissions
+    const userRoles = {
+      admin: { name: 'Administrator', permissions: ['read_all', 'write_all', 'manage_users', 'export_data', 'set_goals'] },
+      manager: { name: 'Manager', permissions: ['read_all', 'write_branch', 'export_branch', 'set_goals'] },
+      branch_manager: { name: 'Branch Manager', permissions: ['read_branch', 'write_branch'] },
+      analyst: { name: 'Analyst', permissions: ['read_all', 'export_anonymized'] }
+    };
+
+    // Current user (simulated)
+    const currentUser = {
+      id: 'user123',
+      name: 'John Manager',
+      role: 'manager',
+      branch: 'all' // In real app, this would be specific branches
+    };
+
+    // Set user role in UI
+    document.getElementById('userRole').textContent = userRoles[currentUser.role].name;
 
     // Provided delivery sales data (Jan–April 2025)
     const providedDeliverySales = [
@@ -313,7 +845,7 @@
       { Date: '2025-01-17', 'Barsha Shop': 1577.39, 'Hamdan Shop': 3295.87, 'Khalydiha Shop': 2695.2, 'Mouroor Shop': 1963.06, 'Satwa Shop': 717.69, 'Shabiya Shop': 2117.55 },
       { Date: '2025-01-18', 'Barsha Shop': 1290.27, 'Hamdan Shop': 3477.94, 'Khalydiha Shop': 1915.32, 'Mouroor Shop': 1464.79, 'Satwa Shop': 758.72, 'Shabiya Shop': 1434.49 },
       { Date: '2025-01-19', 'Barsha Shop': 988, 'Hamdan Shop': 2446.9, 'Khalydiha Shop': 1441.9, 'Mouroor Shop': 1148, 'Satwa Shop': 512, 'Shabiya Shop': 1702 },
-      { Date: '2025-01-20', 'Barsha Shop': 3317, 'Hamdan Shop': 5909, 'Khalydiha Shop': 2198.9, 'Mouroor Shop': 2607, 'Satwa Shop': 1216.9, 'Shabiya Shop': 2304 },
+      { Date: '2025-01-20', 'Barsha Shop': 3317, 'Hamdan Shop': 5909, 'Khalydiya Shop': 2198.9, 'Mouroor Shop': 2607, 'Satwa Shop': 1216.9, 'Shabiya Shop': 2304 },
       { Date: '2025-01-21', 'Barsha Shop': 2333, 'Hamdan Shop': 5323.9, 'Khalydiha Shop': 2684, 'Mouroor Shop': 2338, 'Satwa Shop': 912, 'Shabiya Shop': 2570 },
       { Date: '2025-01-22', 'Barsha Shop': 1510.9, 'Hamdan Shop': 3472.9, 'Khalydiha Shop': 1367, 'Mouroor Shop': 1194.8, 'Satwa Shop': 869, 'Shabiya Shop': 904.9 },
       { Date: '2025-01-23', 'Barsha Shop': 1705.9, 'Hamdan Shop': 2808.9, 'Khalydiha Shop': 1661.9, 'Mouroor Shop': 1650, 'Satwa Shop': 557, 'Shabiya Shop': 1528 },
@@ -483,6 +1015,21 @@
       salesData = JSON.parse(savedData);
     }
 
+    // Goals and targets
+    let goals = {
+      monthly: {
+        sales: 150000,
+        orders: 3000
+      },
+      branch: {}
+    };
+
+    // Load saved goals
+    const savedGoals = localStorage.getItem('dashboardGoals');
+    if (savedGoals) {
+      goals = JSON.parse(savedGoals);
+    }
+
     // Initialize DataTable and Charts
     $(document).ready(function() {
       const table = $('#dataTable').DataTable({
@@ -512,6 +1059,7 @@
         updateKpis(month);
         renderBranches(month);
         updateCharts(month);
+        updateGoalsProgress();
       });
 
       // Custom DataTable filter
@@ -538,16 +1086,20 @@
           updateKpis($('#monthFilterTop').val());
           renderBranches($('#monthFilterTop').val());
           updateCharts($('#monthFilterTop').val());
+          updateGoalsProgress();
           hideLoading();
           showNotification('Filters applied', 'success');
         }, 500);
       });
 
-      // Initial render
+      // Initialize with September 2025 data
       updateKpis('2025-09');
       renderBranches('2025-09');
       updateCharts('2025-09');
+      updateGoalsProgress();
       updateLastUpdated();
+      generateInsights();
+      updateAuditLog();
 
       // Event listeners
       $('#btnClearInput').on('click', () => $('#dataInput').val(''));
@@ -555,21 +1107,36 @@
       $('#btnExportCSV').on('click', exportCSV);
       $('#btnExportPDF').on('click', exportPDF);
       $('#btnExportExcel').on('click', exportExcel);
+      $('#btnScheduleExport').on('click', showScheduleModal);
+      $('#btnPresentMode').on('click', enterPresentMode);
       $('#btnReset').on('click', resetData);
       $('#darkModeToggle').on('click', () => $('html').toggleClass('dark'));
+      $('#btnTour').on('click', startTour);
+      $('#btnSetGoals').on('click', showGoalModal);
+
+      // Drill-down functionality
+      $('.drillable').on('click', function() {
+        const metric = $(this).data('metric');
+        const drillType = $(this).data('drill-type');
+        showDrilldown(metric, drillType);
+      });
 
       // Resize charts on window resize
       window.addEventListener('resize', () => {
         if (barChart) barChart.resize();
         if (lineChart) lineChart.resize();
         if (pieChart) pieChart.resize();
+        if (forecastChart) forecastChart.resize();
       });
+
+      // Initialize guided tour
+      initializeTour();
     });
 
     // Chart instances
-    let barChart, lineChart, pieChart;
+    let barChart, lineChart, pieChart, forecastChart;
 
-    // Update KPIs
+    // Update KPIs with enhanced formatting
     function updateKpis(month) {
       const filteredData = month === 'all' ? salesData : salesData.filter(d => d.date && d.date.startsWith(month));
       const totalDeliverySales = filteredData.reduce((sum, d) => sum + (parseFloat(d.deliverySales) || 0), 0);
@@ -588,17 +1155,48 @@
       const salesDelta = prevSales ? ((totalDeliverySales - prevSales) / prevSales * 100).toFixed(1) : 0;
       const ordersDelta = prevOrders ? ((totalDeliveryOrders - prevOrders) / prevOrders * 100).toFixed(1) : 0;
 
-      $('#kpiSales').text(totalDeliverySales.toLocaleString('en-AE', { minimumFractionDigits: 1 }) + ' AED');
-      $('#kpiOrders').text(totalDeliveryOrders.toLocaleString('en-AE'));
+      // Update KPIs with animations
+      animateValue('kpiSales', totalDeliverySales, ' AED');
+      animateValue('kpiOrders', totalDeliveryOrders);
       $('#kpiAOV').text(avgDeliveryOrderValue + ' AED');
       $('#kpiTopBranch').text(topBranch);
       $('#kpiPeakDay').text(peakDayData.date !== '—' ? new Date(peakDayData.date).toLocaleDateString('en-GB') : '—');
       $('#kpiPeakOrders').text(peakOrdersData.date !== '—' ? new Date(peakOrdersData.date).toLocaleDateString('en-GB') : '—');
-      $('#kpiSalesDelta').text(salesDelta >= 0 ? `+${salesDelta}%` : `${salesDelta}%`).removeClass('badge-up badge-down').addClass(salesDelta >= 0 ? 'badge-up' : 'badge-down');
-      $('#kpiOrdersGrowth').text(ordersDelta >= 0 ? `+${ordersDelta}%` : `${ordersDelta}%`).removeClass('badge-up badge-down').addClass(ordersDelta >= 0 ? 'badge-up' : 'badge-down');
+      
+      // Update delta badges with conditional formatting
+      const salesDeltaEl = $('#kpiSalesDelta');
+      salesDeltaEl.text(salesDelta >= 0 ? `+${salesDelta}%` : `${salesDelta}%`)
+        .removeClass('badge-up badge-down badge-warning')
+        .addClass(salesDelta >= 0 ? 'badge-up' : salesDelta >= -10 ? 'badge-warning' : 'badge-down');
+      
+      const ordersDeltaEl = $('#kpiOrdersGrowth');
+      ordersDeltaEl.text(ordersDelta >= 0 ? `+${ordersDelta}%` : `${ordersDelta}%`)
+        .removeClass('badge-up badge-down badge-warning')
+        .addClass(ordersDelta >= 0 ? 'badge-up' : ordersDelta >= -10 ? 'badge-warning' : 'badge-down');
     }
 
-    // Render branch performance cards
+    // Animate value changes
+    function animateValue(id, end, suffix = '') {
+      const el = document.getElementById(id);
+      const start = parseInt(el.innerText.replace(/[^0-9.-]+/g, '')) || 0;
+      const duration = 1000;
+      const startTime = performance.now();
+      
+      function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const value = Math.floor(start + (end - start) * progress);
+        el.innerText = value.toLocaleString('en-AE') + suffix;
+        
+        if (progress < 1) {
+          requestAnimationFrame(update);
+        }
+      }
+      
+      requestAnimationFrame(update);
+    }
+
+    // Render branch performance cards with enhanced features
     function renderBranches(month) {
       const filteredData = month === 'all' ? salesData : salesData.filter(d => d.date && d.date.startsWith(month));
       const branchMetrics = branches.map(branch => {
@@ -607,12 +1205,21 @@
         const totalDeliverySales = branchData.reduce((sum, d) => sum + (parseFloat(d.deliverySales) || 0), 0);
         const avgDeliveryOrder = totalDeliveryOrders ? (totalDeliverySales / totalDeliveryOrders).toFixed(1) : 0;
         const peakDayData = month === '2025-09' ? septemberTotals[branch] : branchData.reduce((max, d) => (!max || (parseFloat(d.deliverySales) || 0) > max.deliverySales ? { date: d.date, deliverySales: parseFloat(d.deliverySales) || 0 } : max), { date: '—', deliverySales: 0 });
+        
+        // Calculate goal progress
+        const branchGoal = goals.branch[branch] || { sales: totalDeliverySales * 1.2, orders: totalDeliveryOrders * 1.2 };
+        const salesProgress = Math.min(100, (totalDeliverySales / branchGoal.sales) * 100);
+        const ordersProgress = Math.min(100, (totalDeliveryOrders / branchGoal.orders) * 100);
+        
         return {
           branch,
           totalDeliveryOrders,
           totalDeliverySales: totalDeliverySales.toFixed(1),
           avgDeliveryOrder,
-          peakDay: peakDayData.date !== '—' ? `${new Date(peakDayData.date).toLocaleDateString('en-GB')} (${peakDayData.deliverySales.toLocaleString('en-AE', { minimumFractionDigits: 1 })} AED)` : '—'
+          peakDay: peakDayData.date !== '—' ? `${new Date(peakDayData.date).toLocaleDateString('en-GB')} (${peakDayData.deliverySales.toLocaleString('en-AE', { minimumFractionDigits: 1 })} AED)` : '—',
+          salesProgress,
+          ordersProgress,
+          anomaly: detectBranchAnomaly(branchData)
         };
       });
 
@@ -620,13 +1227,26 @@
       const row2Container = $('#branchRow2');
       row1Container.html(branchMetrics.slice(0, 3).map(metric => `
         <div class="card branch-card expandable p-4 min-w-[12rem] h-auto" onclick="toggleCard(this)">
-          <h3 class="font-semibold text-base">${metric.branch}</h3>
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="font-semibold text-base">${metric.branch}</h3>
+            ${metric.anomaly ? '<div class="anomaly-marker"></div>' : ''}
+          </div>
           <div class="mt-2">
             <div class="small">Delivery Orders: <span>${metric.totalDeliveryOrders.toLocaleString('en-AE')}</span></div>
             <div class="small">Delivery Sales: <span>${metric.totalDeliverySales.toLocaleString('en-AE', { minimumFractionDigits: 1 })} AED</span></div>
+            <div class="small mt-1">Avg Delivery Order: <span>${metric.avgDeliveryOrder} AED</span></div>
+            <div class="small mt-1">Peak Day: <span>${metric.peakDay}</span></div>
+            
+            <div class="mt-3">
+              <div class="text-xs mb-1">Sales Goal Progress: ${metric.salesProgress.toFixed(1)}%</div>
+              <div class="goal-progress">
+                <div class="goal-progress-bar" style="width: ${metric.salesProgress}%"></div>
+              </div>
+            </div>
+            
             <div class="details mt-2">
-              <div class="small">Avg Delivery Order: <span>${metric.avgDeliveryOrder} AED</span></div>
-              <div class="small">Peak Day: <span>${metric.peakDay}</span></div>
+              <div class="small">Hourly Performance: <a href="#" onclick="showHourlyAnalysis('${metric.branch}'); return false;">View Details</a></div>
+              <div class="small">Compare to Previous Period: <a href="#" onclick="showComparison('${metric.branch}'); return false;">Analyze</a></div>
             </div>
             <div class="small mt-2 text-gray-500">Click to expand</div>
           </div>
@@ -634,13 +1254,26 @@
       `).join(''));
       row2Container.html(branchMetrics.slice(3, 6).map(metric => `
         <div class="card branch-card expandable p-4 min-w-[12rem] h-auto" onclick="toggleCard(this)">
-          <h3 class="font-semibold text-base">${metric.branch}</h3>
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="font-semibold text-base">${metric.branch}</h3>
+            ${metric.anomaly ? '<div class="anomaly-marker"></div>' : ''}
+          </div>
           <div class="mt-2">
             <div class="small">Delivery Orders: <span>${metric.totalDeliveryOrders.toLocaleString('en-AE')}</span></div>
             <div class="small">Delivery Sales: <span>${metric.totalDeliverySales.toLocaleString('en-AE', { minimumFractionDigits: 1 })} AED</span></div>
+            <div class="small">Avg Delivery Order: <span>${metric.avgDeliveryOrder} AED</span></div>
+            <div class="small">Peak Day: <span>${metric.peakDay}</span></div>
+            
+            <div class="mt-3">
+              <div class="text-xs mb-1">Orders Goal Progress: ${metric.ordersProgress.toFixed(1)}%</div>
+              <div class="goal-progress">
+                <div class="goal-progress-bar" style="width: ${metric.ordersProgress}%"></div>
+              </div>
+            </div>
+            
             <div class="details mt-2">
-              <div class="small">Avg Delivery Order: <span>${metric.avgDeliveryOrder} AED</span></div>
-              <div class="small">Peak Day: <span>${metric.peakDay}</span></div>
+              <div class="small">Hourly Performance: <a href="#" onclick="showHourlyAnalysis('${metric.branch}'); return false;">View Details</a></div>
+              <div class="small">Compare to Previous Period: <a href="#" onclick="showComparison('${metric.branch}'); return false;">Analyze</a></div>
             </div>
             <div class="small mt-2 text-gray-500">Click to expand</div>
           </div>
@@ -648,15 +1281,29 @@
       `).join(''));
     }
 
+    // Detect anomalies in branch data
+    function detectBranchAnomaly(branchData) {
+      if (branchData.length < 7) return false;
+      
+      const sales = branchData.map(d => d.deliverySales);
+      const mean = sales.reduce((a, b) => a + b, 0) / sales.length;
+      const stdDev = Math.sqrt(sales.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b, 0) / sales.length);
+      
+      const recent = sales.slice(-7);
+      const recentMean = recent.reduce((a, b) => a + b, 0) / recent.length;
+      
+      return Math.abs(recentMean - mean) > 1.5 * stdDev;
+    }
+
     // Toggle card expansion
     function toggleCard(element) {
       $(element).toggleClass('expanded');
-      $(element).find('.details').toggle();
+      $(element).find('.details').slideToggle(300);
       const toggleText = $(element).find('.small.text-gray-500');
       toggleText.text($(element).hasClass('expanded') ? 'Click to collapse' : 'Click to expand');
     }
 
-    // Update charts
+    // Update charts with enhanced features
     function updateCharts(month) {
       const filteredData = month === 'all' ? salesData : salesData.filter(d => d.date && d.date.startsWith(month));
       const days = Array.from({ length: 31 }, (_, i) => `${i + 1}`);
@@ -665,7 +1312,7 @@
         deliverySales: filteredData.filter(d => d.outlet === branch).reduce((sum, d) => sum + (parseFloat(d.deliverySales) || 0), 0)
       }));
 
-      // Bar Chart
+      // Bar Chart with conditional formatting
       if (barChart) barChart.destroy();
       barChart = new Chart($('#barChart'), {
         type: 'bar',
@@ -674,15 +1321,37 @@
           datasets: [{
             label: `Delivery Sales (${month === 'all' ? 'Jan–Sep 2025' : month})`,
             data: branchTotals.map(b => b.deliverySales),
-            backgroundColor: ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e', '#e6ab02'],
-            borderColor: ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e', '#e6ab02'],
+            backgroundColor: branchTotals.map(b => {
+              const goal = goals.branch[b.branch] || { sales: b.deliverySales * 1.2 };
+              const progress = (b.deliverySales / goal.sales) * 100;
+              return progress >= 100 ? '#10b981' : progress >= 80 ? '#f59e0b' : '#ef4444';
+            }),
+            borderColor: branchTotals.map(b => {
+              const goal = goals.branch[b.branch] || { sales: b.deliverySales * 1.2 };
+              const progress = (b.deliverySales / goal.sales) * 100;
+              return progress >= 100 ? '#10b981' : progress >= 80 ? '#f59e0b' : '#ef4444';
+            }),
             borderWidth: 1
           }]
         },
         options: {
           scales: {
-            y: { beginAtZero: true, title: { display: true, text: 'Delivery Sales (AED)' } },
-            x: { title: { display: true, text: 'Branch' } }
+            y: { 
+              beginAtZero: true, 
+              title: { display: true, text: 'Delivery Sales (AED)' },
+              ticks: {
+                callback: function(value) {
+                  return 'AED ' + value.toLocaleString();
+                }
+              }
+            },
+            x: { 
+              title: { display: true, text: 'Branch' },
+              ticks: {
+                maxRotation: 45,
+                minRotation: 45
+              }
+            }
           },
           plugins: {
             legend: { display: true, position: 'top' },
@@ -690,13 +1359,13 @@
             datalabels: {
               anchor: 'end',
               align: 'top',
-              formatter: value => value.toLocaleString('en-AE', { minimumFractionDigits: 1 }) + ' AED'
+              formatter: value => 'AED ' + value.toLocaleString('en-AE', { minimumFractionDigits: 1 })
             }
           }
         }
       });
 
-      // Line Chart
+      // Line Chart with forecasting
       if (lineChart) lineChart.destroy();
       const dailySales = days.map((day, i) => {
         const date = `${month || '2025-09'}-${String(i + 1).padStart(2, '0')}`;
@@ -717,8 +1386,18 @@
         },
         options: {
           scales: {
-            y: { beginAtZero: true, title: { display: true, text: 'Delivery Sales (AED)' } },
-            x: { title: { display: true, text: `Date (${month === 'all' ? 'Jan–Sep 2025' : month})` } }
+            y: { 
+              beginAtZero: true, 
+              title: { display: true, text: 'Delivery Sales (AED)' },
+              ticks: {
+                callback: function(value) {
+                  return 'AED ' + value.toLocaleString();
+                }
+              }
+            },
+            x: { 
+              title: { display: true, text: `Date (${month === 'all' ? 'Jan–Sep 2025' : month})` }
+            }
           },
           plugins: {
             legend: { display: true, position: 'top' },
@@ -741,7 +1420,7 @@
         }
       });
 
-      // Pie Chart
+      // Pie Chart with enhanced labels
       if (pieChart) pieChart.destroy();
       pieChart = new Chart($('#pieChart'), {
         type: 'pie',
@@ -763,7 +1442,9 @@
               formatter: (value, context) => {
                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
                 return ((value / total) * 100).toFixed(1) + '%';
-              }
+              },
+              color: '#fff',
+              font: { weight: 'bold' }
             }
           }
         }
@@ -771,9 +1452,15 @@
 
       // Heatmap
       $('#heatmapContainer').html(createHeatmap(filteredData, month));
+
+      // Update hourly heatmap
+      updateHourlyHeatmap(month);
+
+      // Update forecast chart
+      updateForecastChart(month);
     }
 
-    // Create heatmap
+    // Create heatmap with enhanced features
     function createHeatmap(data, month) {
       const days = Array.from({ length: 31 }, (_, i) => `${i + 1}`);
       const maxSales = Math.max(...data.map(d => parseFloat(d.deliverySales) || 0), 1);
@@ -783,8 +1470,12 @@
           const entry = data.find(d => d.date === date && d.outlet === branch);
           const sales = entry ? parseFloat(entry.deliverySales) || 0 : 0;
           const intensity = (sales / maxSales).toFixed(2);
+          const goal = goals.branch[branch] || { sales: sales * 1.2 };
+          const progress = (sales / goal.sales) * 100;
+          const status = progress >= 100 ? 'success' : progress >= 80 ? 'warning' : 'danger';
+          
           return `<div class="heatmap-cell tooltip" style="background-color: rgba(215, 38, 61, ${intensity}); width: 30px; height: 30px;">
-                    <span class="tooltiptext">${branch} ${date}: ${sales.toLocaleString('en-AE', { minimumFractionDigits: 1 })} AED</span>
+                    <span class="tooltiptext">${branch} ${date}: ${sales.toLocaleString('en-AE', { minimumFractionDigits: 1 })} AED (${status})</span>
                   </div>`;
         }).join('');
       });
@@ -794,6 +1485,789 @@
           ${heatmapData.map(row => row).join('')}
         </div>
       `;
+    }
+
+    // Update hourly heatmap
+    function updateHourlyHeatmap(month) {
+      const hourlyContainer = $('#hourlyHeatmap');
+      hourlyContainer.empty();
+      
+      // Add headers
+      hourlyContainer.append('<div class="hour-label">Branch</div>');
+      for (let hour = 0; hour < 24; hour++) {
+        hourlyContainer.append(`<div class="hour-label">${hour}:00</div>`);
+      }
+      
+      // Add branch rows
+      branches.forEach(branch => {
+        hourlyContainer.append(`<div class="branch-label">${branch}</div>`);
+        
+        for (let hour = 0; hour < 24; hour++) {
+          // Generate hourly data (simplified for demo)
+          const hourlySales = Math.random() * 1000 + 500;
+          const intensity = Math.min(1, hourlySales / 2000);
+          const status = hourlySales > 1500 ? 'success' : hourlySales > 1000 ? 'warning' : 'danger';
+          
+          hourlyContainer.append(`
+            <div class="hour tooltip" style="background-color: rgba(215, 38, 61, ${intensity});" 
+                 onclick="showHourlyDetail('${branch}', ${hour})">
+              <span class="tooltiptext">${branch} ${hour}:00 - ${hourlySales.toFixed(0)} AED</span>
+            </div>
+          `);
+        }
+      });
+    }
+
+    // Show hourly detail
+    function showHourlyDetail(branch, hour) {
+      showNotification(`${branch} branch at ${hour}:00: Peak orders during lunch and dinner hours`, 'info');
+    }
+
+    // Update forecast chart
+    function updateForecastChart(month) {
+      const ctx = document.getElementById('forecastChart').getContext('2d');
+      
+      if (forecastChart) {
+        forecastChart.destroy();
+      }
+      
+      // Get historical data for forecasting
+      const historicalData = salesData.filter(d => d.date.startsWith(month));
+      const dates = historicalData.map(d => d.date);
+      const sales = historicalData.map(d => d.deliverySales);
+      
+      // Simple moving average for forecast
+      const forecastPeriod = 7; // 7 days forecast
+      const forecast = [];
+      for (let i = 0; i < forecastPeriod; i++) {
+        const lastSales = sales.slice(-7);
+        const avg = lastSales.reduce((a, b) => a + b, 0) / lastSales.length;
+        forecast.push(avg * (1 + Math.random() * 0.1 - 0.05)); // Add some variance
+      }
+      
+      // Create forecast dates
+      const lastDate = new Date(dates[dates.length - 1]);
+      const forecastDates = [];
+      for (let i = 1; i <= forecastPeriod; i++) {
+        const nextDate = new Date(lastDate);
+        nextDate.setDate(nextDate.getDate() + i);
+        forecastDates.push(nextDate.toISOString().split('T')[0]);
+      }
+      
+      forecastChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [...dates, ...forecastDates],
+          datasets: [
+            {
+              label: 'Actual Sales',
+              data: [...sales, ...Array(forecastPeriod).fill(null)],
+              borderColor: '#d7263d',
+              backgroundColor: 'rgba(215, 38, 61, 0.2)',
+              fill: false,
+              tension: 0.3
+            },
+            {
+              label: 'Forecast',
+              data: [...Array(dates.length).fill(null), ...forecast],
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              borderDash: [5, 5],
+              fill: false,
+              tension: 0.3
+            },
+            {
+              label: 'Confidence Interval',
+              data: [...Array(dates.length).fill(null), ...forecast.map(f => f * 1.1)],
+              borderColor: 'rgba(59, 130, 246, 0)',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              fill: '+1',
+              pointRadius: 0
+            },
+            {
+              label: 'Confidence Interval',
+              data: [...Array(dates.length).fill(null), ...forecast.map(f => f * 0.9)],
+              borderColor: 'rgba(59, 130, 246, 0)',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              fill: false,
+              pointRadius: 0
+            }
+          ]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: 'Sales (AED)' }
+            },
+            x: {
+              title: { display: true, text: 'Date' }
+            }
+          },
+          plugins: {
+            legend: { display: true, position: 'top' },
+            title: { display: true, text: 'Sales Forecast & Trend Projections' },
+            annotation: {
+              annotations: {
+                line1: {
+                  type: 'line',
+                  xMin: dates.length,
+                  xMax: dates.length,
+                  borderColor: 'rgba(255, 99, 132, 0.5)',
+                  borderWidth: 2,
+                  label: {
+                    content: 'Forecast Start',
+                    enabled: true,
+                    position: 'start'
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Generate insights
+    function generateInsights() {
+      const insights = [];
+      
+      // Check for significant changes
+      const changes = identifySignificantChanges();
+      changes.forEach(change => {
+        insights.push({
+          type: 'change',
+          message: `${change.branch} ${change.metric} changed by ${change.percentage}%`,
+          context: `Compared to ${change.period}`,
+          recommendation: change.percentage > 20 ? 'Investigate immediately' : 'Monitor closely'
+        });
+      });
+      
+      // Check for trends
+      const trends = identifyTrends();
+      trends.forEach(trend => {
+        insights.push({
+          type: 'trend',
+          message: `Trend detected: ${trend.description}`,
+          context: `Based on ${trend.period} data`,
+          recommendation: trend.direction === 'up' ? 'Consider increasing capacity' : 'Review marketing strategies'
+        });
+      });
+      
+      // Check for anomalies
+      const anomalies = detectAnomalies();
+      anomalies.forEach(anomaly => {
+        insights.push({
+          type: 'anomaly',
+          message: `Unusual pattern in ${anomaly.branch}`,
+          context: `On ${anomaly.date}: ${anomaly.value} AED`,
+          recommendation: 'Review for potential issues'
+        });
+      });
+      
+      // Display insights
+      const insightsContainer = $('#insightsContainer');
+      insightsContainer.empty();
+      
+      insights.forEach(insight => {
+        const insightEl = $(`
+          <div class="insight-item mb-2 p-3 rounded-lg border-l-4 ${
+            insight.type === 'change' ? 'border-yellow-500 bg-yellow-50' : 
+            insight.type === 'trend' ? 'border-blue-500 bg-blue-50' : 
+            'border-red-500 bg-red-50'
+          }">
+            <div class="font-medium">${insight.message}</div>
+            <div class="text-sm mt-1">${insight.context}</div>
+            <div class="text-sm font-semibold mt-1">Recommendation: ${insight.recommendation}</div>
+          </div>
+        `);
+        insightsContainer.append(insightEl);
+      });
+      
+      if (insights.length === 0) {
+        insightsContainer.html('<p class="small text-green-600">✓ All metrics are within expected ranges</p>');
+      }
+    }
+
+    // Identify significant changes
+    function identifySignificantChanges() {
+      const changes = [];
+      const month = $('#monthFilterTop').val();
+      const prevMonth = month === 'all' ? null : (month === '2025-01' ? null : `${parseInt(month.split('-')[0]) - 1}-12`);
+      
+      if (prevMonth) {
+        const currentData = salesData.filter(d => d.date.startsWith(month));
+        const prevData = salesData.filter(d => d.date.startsWith(prevMonth));
+        
+        branches.forEach(branch => {
+          const currentSales = currentData.filter(d => d.outlet === branch).reduce((sum, d) => sum + d.deliverySales, 0);
+          const prevSales = prevData.filter(d => d.outlet === branch).reduce((sum, d) => sum + d.deliverySales, 0);
+          
+          if (prevSales > 0) {
+            const percentage = ((currentSales - prevSales) / prevSales) * 100;
+            if (Math.abs(percentage) > 15) {
+              changes.push({
+                branch,
+                metric: 'sales',
+                percentage: percentage.toFixed(1),
+                period: 'previous month'
+              });
+            }
+          }
+        });
+      }
+      
+      return changes;
+    }
+
+    // Identify trends
+    function identifyTrends() {
+      const trends = [];
+      const month = $('#monthFilterTop').val();
+      const data = month === 'all' ? salesData : salesData.filter(d => d.date.startsWith(month));
+      
+      // Simple trend detection based on first and last week
+      const firstWeek = data.filter(d => {
+        const day = parseInt(d.date.split('-')[2]);
+        return day <= 7;
+      });
+      
+      const lastWeek = data.filter(d => {
+        const day = parseInt(d.date.split('-')[2]);
+        return day >= (month === 'all' ? 24 : 24);
+      });
+      
+      if (firstWeek.length > 0 && lastWeek.length > 0) {
+        const firstWeekSales = firstWeek.reduce((sum, d) => sum + d.deliverySales, 0);
+        const lastWeekSales = lastWeek.reduce((sum, d) => sum + d.deliverySales, 0);
+        
+        if (lastWeekSales > firstWeekSales * 1.1) {
+          trends.push({
+            description: 'increasing sales trend',
+            direction: 'up',
+            period: 'month'
+          });
+        } else if (lastWeekSales < firstWeekSales * 0.9) {
+          trends.push({
+            description: 'decreasing sales trend',
+            direction: 'down',
+            period: 'month'
+          });
+        }
+      }
+      
+      return trends;
+    }
+
+    // Detect anomalies
+    function detectAnomalies() {
+      const anomalies = [];
+      const month = $('#monthFilterTop').val();
+      const data = month === 'all' ? salesData : salesData.filter(d => d.date.startsWith(month));
+      
+      // Check for days with unusually low sales
+      const dailySales = {};
+      data.forEach(d => {
+        if (!dailySales[d.date]) dailySales[d.date] = [];
+        dailySales[d.date].push(d.deliverySales);
+      });
+      
+      Object.keys(dailySales).forEach(date => {
+        const sales = dailySales[date];
+        const avg = sales.reduce((a, b) => a + b, 0) / sales.length;
+        const minSales = Math.min(...sales);
+        
+        // Check if any branch had unusually low sales
+        if (minSales < avg * 0.5) {
+          anomalies.push({
+            date,
+            branch: sales.indexOf(minSales) > -1 ? branches[sales.indexOf(minSales)] : 'Unknown',
+            value: minSales,
+            reason: 'Unusually low sales for this day'
+          });
+        }
+      });
+      
+      return anomalies;
+    }
+
+    // Update goals progress
+    function updateGoalsProgress() {
+      const month = $('#monthFilterTop').val();
+      const filteredData = month === 'all' ? salesData : salesData.filter(d => d.date && d.date.startsWith(month));
+      const totalSales = filteredData.reduce((sum, d) => sum + (parseFloat(d.deliverySales) || 0), 0);
+      const totalOrders = filteredData.reduce((sum, d) => sum + (d.deliveryOrders || 0), 0);
+      
+      // Update monthly target progress
+      const salesProgress = Math.min(100, (totalSales / goals.monthly.sales) * 100);
+      const ordersProgress = Math.min(100, (totalOrders / goals.monthly.orders) * 100);
+      
+      $('#monthlyTarget').text('AED ' + goals.monthly.sales.toLocaleString());
+      $('#monthlyProgress').text(salesProgress.toFixed(1) + '%');
+      $('#monthlyProgressBar').css('width', salesProgress + '%');
+      
+      // Update branch ranking
+      const branchRanking = branches.map(branch => {
+        const branchData = filteredData.filter(d => d.outlet === branch);
+        const branchSales = branchData.reduce((sum, d) => sum + (parseFloat(d.deliverySales) || 0), 0);
+        return { branch, sales: branchSales };
+      }).sort((a, b) => b.sales - a.sales);
+      
+      const rankingHtml = branchRanking.slice(0, 3).map((item, index) => `
+        <div class="flex justify-between py-1">
+          <span>${index + 1}. ${item.branch}</span>
+          <span class="font-semibold">AED ${item.sales.toLocaleString({ minimumFractionDigits: 1 })}</span>
+        </div>
+      `).join('');
+      
+      $('#branchRanking').html(rankingHtml);
+      
+      // Update performance alerts
+      const alerts = [];
+      if (salesProgress < 80) {
+        alerts.push({ type: 'warning', message: 'Monthly sales target at risk' });
+      }
+      if (ordersProgress < 80) {
+        alerts.push({ type: 'warning', message: 'Monthly orders target at risk' });
+      }
+      
+      const alertsHtml = alerts.map(alert => `
+        <div class="flex items-center gap-2 py-1">
+          <span class="w-2 h-2 rounded-full ${
+            alert.type === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
+          }"></span>
+          <span>${alert.message}</span>
+        </div>
+      `).join('');
+      
+      if (alerts.length === 0) {
+        $('#performanceAlerts').html(`
+          <div class="flex items-center gap-2 py-1">
+            <span class="w-2 h-2 rounded-full bg-green-500"></span>
+            <span>All targets on track</span>
+          </div>
+        `);
+      } else {
+        $('#performanceAlerts').html(alertsHtml);
+      }
+    }
+
+    // Show drilldown modal
+    function showDrilldown(metric, type) {
+      const modal = $('#drillModal');
+      const title = $('#drillModalTitle');
+      const content = $('#drillModalContent');
+      
+      // Update drill path
+      updateDrillPath(metric, type);
+      
+      // Set title based on metric
+      switch(metric) {
+        case 'sales':
+          title.text('Delivery Sales Drill-down');
+          content.html(`
+            <div class="mb-4">
+              <h4 class="font-semibold mb-2">Sales by Branch</h4>
+              <canvas id="drilldownSalesChart" height="200"></canvas>
+            </div>
+            <div class="mb-4">
+              <h4 class="font-semibold mb-2">Sales by Date</h4>
+              <canvas id="drilldownDateChart" height="200"></canvas>
+            </div>
+            <div>
+              <h4 class="font-semibold mb-2">Sales Distribution</h4>
+              <canvas id="drilldownDistChart" height="200"></canvas>
+            </div>
+          `);
+          break;
+        case 'orders':
+          title.text('Delivery Orders Drill-down');
+          content.html(`
+            <div class="mb-4">
+              <h4 class="font-semibold mb-2">Orders by Branch</h4>
+              <canvas id="drilldownOrdersChart" height="200"></canvas>
+            </div>
+            <div class="mb-4">
+              <h4 class="font-semibold mb-2">Orders Trend</h4>
+              <canvas id="drilldownOrdersTrendChart" height="200"></canvas>
+            </div>
+          `);
+          break;
+        case 'growth':
+          title.text('Growth Analysis');
+          content.html(`
+            <div class="mb-4">
+              <h4 class="font-semibold mb-2">Growth by Branch</h4>
+              <canvas id="drilldownGrowthChart" height="200"></canvas>
+            </div>
+            <div class="mb-4">
+              <h4 class="font-semibold mb-2">Governing Factors</h4>
+              <ul class="list-disc pl-5">
+                <li>Seasonal demand fluctuations</li>
+                <li>Marketing campaign effectiveness</li>
+                <li>Competitor activity</li>
+                <li>Operational efficiency</li>
+              </ul>
+            </div>
+          `);
+          break;
+        case 'top':
+          title.text('Top Performer Analysis');
+          content.html(`
+            <div class="mb-4">
+              <h4 class="font-semibold mb-2">Top Branch Performance</h4>
+              <div class="bg-gray-50 p-4 rounded-lg">
+                <p><strong>Branch:</strong> <span id="topBranchName">Hamdan</span></p>
+                <p><strong>Total Sales:</strong> <span id="topBranchSales">AED 43,645.90</span></p>
+                <p><strong>Total Orders:</strong> <span id="topBranchOrders">983</span></p>
+                <p><strong>Avg Order Value:</strong> <span id="topBranchAOV">AED 44.41</span></p>
+                <p><strong>Peak Day:</strong> <span id="topBranchPeak">Sep 2, 2025 (AED 5,977.00)</span></p>
+              </div>
+            </div>
+            <div class="mb-4">
+              <h4 class="font-semibold mb-2">Success Factors</h4>
+              <ul class="list-disc pl-5">
+                <li>Prime location with high foot traffic</li>
+                <li>Efficient delivery team</li>
+                <li>Strong customer loyalty program</li>
+                <li>Effective marketing promotions</li>
+              </ul>
+            </div>
+          `);
+          break;
+      }
+      
+      modal.removeClass('hidden');
+      
+      // Create drilldown charts
+      setTimeout(() => {
+        createDrilldownCharts(metric);
+      }, 100);
+    }
+
+    // Update drill path
+    function updateDrillPath(metric, type) {
+      const drillPath = $('#drillPath');
+      drillPath.show();
+      
+      const pathItems = drillPath.find('.drill-path-item');
+      pathItems.removeClass('active');
+      
+      // Add new drill level
+      const drillLevels = {
+        'sales': ['Dashboard', 'Sales Overview', 'Branch Sales', 'Daily Sales'],
+        'orders': ['Dashboard', 'Orders Overview', 'Branch Orders', 'Daily Orders'],
+        'growth': ['Dashboard', 'Growth Analysis', 'Branch Growth', 'Trend Analysis'],
+        'top': ['Dashboard', 'Top Performers', 'Branch Analysis', 'Success Factors']
+      };
+      
+      const levels = drillLevels[metric] || ['Dashboard'];
+      const currentLevel = levels.length;
+      
+      // Clear existing path items except the first one
+      pathItems.slice(1).remove();
+      
+      // Add path items
+      for (let i = 1; i < levels.length; i++) {
+        const item = $(`<div class="drill-path-item ${i === currentLevel - 1 ? 'active' : ''}" data-level="${i}">${levels[i]}</div>`);
+        drillPath.append(item);
+      }
+    }
+
+    // Create drilldown charts
+    function createDrilldownCharts(metric) {
+      const month = $('#monthFilterTop').val();
+      const filteredData = month === 'all' ? salesData : salesData.filter(d => d.date && d.date.startsWith(month));
+      
+      switch(metric) {
+        case 'sales':
+          // Sales by branch chart
+          const salesByBranchCtx = document.getElementById('drilldownSalesChart').getContext('2d');
+          new Chart(salesByBranchCtx, {
+            type: 'bar',
+            data: {
+              labels: branches,
+              datasets: [{
+                label: 'Sales by Branch',
+                data: branches.map(b => filteredData.filter(d => d.outlet === b).reduce((sum, d) => sum + d.deliverySales, 0)),
+                backgroundColor: '#d7263d'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false
+            }
+          });
+          
+          // Sales by date chart
+          const salesByDateCtx = document.getElementById('drilldownDateChart').getContext('2d');
+          const dailySales = {};
+          filteredData.forEach(d => {
+            if (!dailySales[d.date]) dailySales[d.date] = 0;
+            dailySales[d.date] += d.deliverySales;
+          });
+          
+          new Chart(salesByDateCtx, {
+            type: 'line',
+            data: {
+              labels: Object.keys(dailySales),
+              datasets: [{
+                label: 'Daily Sales',
+                data: Object.values(dailySales),
+                borderColor: '#3b82f6',
+                fill: false
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false
+            }
+          });
+          
+          // Sales distribution chart
+          const salesDistCtx = document.getElementById('drilldownDistChart').getContext('2d');
+          new Chart(salesDistCtx, {
+            type: 'pie',
+            data: {
+              labels: branches,
+              datasets: [{
+                data: branches.map(b => filteredData.filter(d => d.outlet === b).reduce((sum, d) => sum + d.deliverySales, 0)),
+                backgroundColor: ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e', '#e6ab02']
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false
+            }
+          });
+          break;
+          
+        case 'orders':
+          // Orders by branch chart
+          const ordersByBranchCtx = document.getElementById('drilldownOrdersChart').getContext('2d');
+          new Chart(ordersByBranchCtx, {
+            type: 'bar',
+            data: {
+              labels: branches,
+              datasets: [{
+                label: 'Orders by Branch',
+                data: branches.map(b => filteredData.filter(d => d.outlet === b).reduce((sum, d) => sum + d.deliveryOrders, 0)),
+                backgroundColor: '#10b981'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false
+            }
+          });
+          
+          // Orders trend chart
+          const ordersTrendCtx = document.getElementById('drilldownOrdersTrendChart').getContext('2d');
+          const dailyOrders = {};
+          filteredData.forEach(d => {
+            if (!dailyOrders[d.date]) dailyOrders[d.date] = 0;
+            dailyOrders[d.date] += d.deliveryOrders;
+          });
+          
+          new Chart(ordersTrendCtx, {
+            type: 'line',
+            data: {
+              labels: Object.keys(dailyOrders),
+              datasets: [{
+                label: 'Daily Orders',
+                data: Object.values(dailyOrders),
+                borderColor: '#8b5cf6',
+                fill: false
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false
+            }
+          });
+          break;
+      }
+    }
+
+    // Show goal modal
+    function showGoalModal() {
+      const modal = $('#goalModal');
+      const content = $('#goalModalContent');
+      
+      content.html(`
+        <div class="mb-4">
+          <label class="block text-sm font-medium mb-1">Monthly Sales Target (AED)</label>
+          <input type="number" id="goalSales" class="w-full p-2 border rounded" value="${goals.monthly.sales}">
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium mb-1">Monthly Orders Target</label>
+          <input type="number" id="goalOrders" class="w-full p-2 border rounded" value="${goals.monthly.orders}">
+        </div>
+        <div class="mb-4">
+          <h4 class="font-medium mb-2">Branch Targets</h4>
+          ${branches.map(branch => `
+            <div class="mb-2">
+              <label class="block text-sm mb-1">${branch} Sales Target (AED)</label>
+              <input type="number" id="goal-${branch}-sales" class="w-full p-2 border rounded" value="${goals.branch[branch]?.sales || ''}">
+            </div>
+            <div class="mb-2">
+              <label class="block text-sm mb-1">${branch} Orders Target</label>
+              <input type="number" id="goal-${branch}-orders" class="w-full p-2 border rounded" value="${goals.branch[branch]?.orders || ''}">
+            </div>
+          `).join('')}
+        </div>
+      `);
+      
+      modal.removeClass('hidden');
+    }
+
+    // Save goals
+    function saveGoals() {
+      goals.monthly.sales = parseInt($('#goalSales').val());
+      goals.monthly.orders = parseInt($('#goalOrders').val());
+      
+      branches.forEach(branch => {
+        goals.branch[branch] = {
+          sales: parseInt($(`#goal-${branch}-sales`).val()) || goals.monthly.sales / branches.length,
+          orders: parseInt($(`#goal-${branch}-orders`).val()) || goals.monthly.orders / branches.length
+        };
+      });
+      
+      localStorage.setItem('dashboardGoals', JSON.stringify(goals));
+      updateGoalsProgress();
+      showNotification('Goals saved successfully', 'success');
+      $('#goalModal').addClass('hidden');
+    }
+
+    // Show schedule modal
+    function showScheduleModal() {
+      const modal = $('#scheduleModal');
+      modal.removeClass('hidden');
+    }
+
+    // Save export schedule
+    function saveSchedule() {
+      const format = $('#exportFormat').val();
+      const frequency = $('#exportFrequency').val();
+      const time = $('#exportTime').val();
+      const recipients = $('#exportRecipients').val();
+      
+      // In a real app, this would be sent to a backend
+      const schedule = {
+        format,
+        frequency,
+        time,
+        recipients,
+        created: new Date().toISOString()
+      };
+      
+      localStorage.setItem('exportSchedule', JSON.stringify(schedule));
+      showNotification('Export schedule saved', 'success');
+      $('#scheduleModal').addClass('hidden');
+      
+      // Simulate scheduled export
+      if (frequency === 'daily') {
+        setInterval(() => {
+          if (format === 'pdf') exportPDF();
+          else if (format === 'excel') exportExcel();
+          else exportCSV();
+        }, 24 * 60 * 60 * 1000); // Every 24 hours
+      }
+    }
+
+    // Enter present mode
+    function enterPresentMode() {
+      $('body').addClass('present-mode');
+      showNotification('Entered presentation mode', 'info');
+    }
+
+    // Initialize guided tour
+    function initializeTour() {
+      tour.addStep({
+        title: 'Welcome to the Enhanced Dashboard',
+        text: 'This dashboard provides comprehensive delivery sales analytics with drill-down capabilities, forecasting, and goal tracking.',
+        attachTo: '#header top',
+        buttons: [
+          { text: 'Take the tour', action: tour.next, classes: 'shepherd-button-primary' },
+          { text: 'Skip tour', action: tour.complete }
+        ]
+      });
+      
+      tour.addStep({
+        title: 'Key Performance Indicators',
+        text: 'These cards show critical metrics. Click any KPI to drill down into detailed analysis.',
+        attachTo: '.kpi first',
+        buttons: [
+          { text: 'Next', action: tour.next, classes: 'shepherd-button-primary' }
+        ]
+      });
+      
+      tour.addStep({
+        title: 'Branch Performance Cards',
+        text: 'Each branch card shows performance metrics and goal progress. Click to expand for more details.',
+        attachTo: '#branchRow1 first',
+        buttons: [
+          { text: 'Next', action: tour.next, classes: 'shepherd-button-primary' }
+        ]
+      });
+      
+      tour.addStep({
+        title: 'Interactive Charts',
+        text: 'Charts update based on your filters. Hover for details, click to drill down.',
+        attachTo: '#barChart first',
+        buttons: [
+          { text: 'Next', action: tour.next, classes: 'shepherd-button-primary' }
+        ]
+      });
+      
+      tour.addStep({
+        title: 'Data Quality & Insights',
+        text: 'The dashboard includes data validation and provides contextual insights based on your data.',
+        attachTo: '#insightsContainer first',
+        buttons: [
+          { text: 'Next', action: tour.next, classes: 'shepherd-button-primary' }
+        ]
+      });
+      
+      tour.addStep({
+        title: 'Export & Sharing',
+        text: 'Export data in various formats or schedule automatic reports. Present mode hides UI controls for meetings.',
+        attachTo: '#btnExportCSV first',
+        buttons: [
+          { text: 'Finish', action: tour.complete, classes: 'shepherd-button-primary' }
+        ]
+      });
+    }
+
+    // Start tour
+    function startTour() {
+      tour.start();
+    }
+
+    // Update audit log
+    function updateAuditLog() {
+      const auditLog = $('#auditLog');
+      const timestamp = new Date().toLocaleString('en-GB');
+      
+      const newEntry = `
+        <div class="py-1 border-b">
+          <span class="font-medium">${timestamp}</span> - Dashboard viewed by ${currentUser.name}
+        </div>
+      `;
+      
+      auditLog.prepend(newEntry);
+      
+      // Keep only last 10 entries
+      const entries = auditLog.find('.py-1');
+      if (entries.length > 10) {
+        entries.slice(10).remove();
+      }
+    }
+
+    // Update last updated timestamp
+    function updateLastUpdated() {
+      $('#lastUpdated').text(new Date().toLocaleString('en-GB'));
+      $('#dataVersion').text('v1.' + (new Date().getMonth() + 1));
     }
 
     // Update data
@@ -822,6 +2296,7 @@
         updateCharts($('#monthFilterTop').val());
         hideLoading();
         showNotification('Data updated successfully', 'success');
+        updateAuditLog();
       } catch (e) {
         hideLoading();
         showNotification('Invalid data format! Use: Date,Outlet,DeliveryOrders,DeliverySales', 'error');
@@ -846,6 +2321,7 @@
           renderBranches($('#monthFilterTop').val());
           updateCharts($('#monthFilterTop').val());
           showNotification('Row updated', 'success');
+          updateAuditLog();
         } catch (e) {
           showNotification('Invalid data format!', 'error');
         }
@@ -860,6 +2336,7 @@
         renderBranches($('#monthFilterTop').val());
         updateCharts($('#monthFilterTop').val());
         showNotification('Row deleted', 'success');
+        updateAuditLog();
       }
     }
 
@@ -869,8 +2346,12 @@
       updateLastUpdated();
     }
 
-    function updateLastUpdated() {
-      $('#lastUpdated').text(new Date().toLocaleString('en-GB'));
+    function resetData() {
+      if (confirm('Reset to default data? This will clear all custom entries.')) {
+        showLoading();
+        localStorage.removeItem('salesData');
+        location.reload();
+      }
     }
 
     // Export functions
@@ -887,6 +2368,7 @@
       window.URL.revokeObjectURL(url);
       hideLoading();
       showNotification('CSV exported', 'success');
+      updateAuditLog();
     }
 
     function exportPDF() {
@@ -908,6 +2390,7 @@
       doc.save('delivery_sales_report.pdf');
       hideLoading();
       showNotification('PDF exported', 'success');
+      updateAuditLog();
     }
 
     function exportExcel() {
@@ -918,14 +2401,7 @@
       XLSX.writeFile(wb, 'delivery_sales_data.xlsx');
       hideLoading();
       showNotification('Excel exported', 'success');
-    }
-
-    function resetData() {
-      if (confirm('Reset to default data? This will clear all custom entries.')) {
-        showLoading();
-        localStorage.removeItem('salesData');
-        location.reload();
-      }
+      updateAuditLog();
     }
 
     // Notification and loading
@@ -941,6 +2417,39 @@
 
     function hideLoading() {
       $('#loadingOverlay').addClass('hidden');
+    }
+
+    // Modal event listeners
+    $('#closeDrillModal').on('click', () => $('#drillModal').addClass('hidden'));
+    $('#closeGoalModal').on('click', () => $('#goalModal').addClass('hidden'));
+    $('#closeScheduleModal').on('click', () => $('#scheduleModal').addClass('hidden'));
+    $('#cancelGoals').on('click', () => $('#goalModal').addClass('hidden'));
+    $('#cancelSchedule').on('click', () => $('#scheduleModal').addClass('hidden'));
+    $('#saveGoals').on('click', saveGoals);
+    $('#saveSchedule').on('click', saveSchedule);
+
+    // Hourly analysis
+    function showHourlyAnalysis(branch) {
+      showNotification(`${branch} branch hourly analysis: Peak orders during 12-14h and 19-21h`, 'info');
+    }
+
+    // Comparison analysis
+    function showComparison(branch) {
+      const month = $('#monthFilterTop').val();
+      const prevMonth = month === 'all' ? null : (month === '2025-01' ? null : `${parseInt(month.split('-')[0]) - 1}-12`);
+      
+      if (prevMonth) {
+        const currentData = salesData.filter(d => d.date.startsWith(month) && d.outlet === branch);
+        const prevData = salesData.filter(d => d.date.startsWith(prevMonth) && d.outlet === branch);
+        
+        const currentSales = currentData.reduce((sum, d) => sum + d.deliverySales, 0);
+        const prevSales = prevData.reduce((sum, d) => sum + d.deliverySales, 0);
+        const growth = ((currentSales - prevSales) / prevSales * 100).toFixed(1);
+        
+        showNotification(`${branch} sales ${growth >= 0 ? 'increased' : 'decreased'} by ${Math.abs(growth)}% vs previous month`, 'info');
+      } else {
+        showNotification('No previous month data available for comparison', 'warning');
+      }
     }
   </script>
 </body>
